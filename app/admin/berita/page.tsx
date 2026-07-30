@@ -100,7 +100,7 @@ export default function AdminBeritaPage() {
         try {
           const errorData = text ? JSON.parse(text) : null;
           message = errorData?.error || errorData?.message || message;
-        } catch {
+        } catch (error) {
           if (text) message = text;
         }
         setError(message);

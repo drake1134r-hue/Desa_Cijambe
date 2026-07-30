@@ -87,7 +87,7 @@ export default function AdminNewsPage() {
           try {
             const errorData = text ? JSON.parse(text) : null;
             message = errorData?.error || errorData?.message || message;
-          } catch {
+          } catch (error) {
             if (text) message = text;
           }
           throw new Error(message);
