@@ -91,6 +91,13 @@ export default function AdminNewsPage() {
             if (text) message = text;
           }
           throw new Error(message);
+      }
+
+      const removedArticle = await response.json().catch(() => null);
+      setArticles((current) => current.filter((article) => article.id !== id));
+      showSuccess("Berita berhasil dihapus.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghapus berita");
     }
   };
 

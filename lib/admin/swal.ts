@@ -24,7 +24,6 @@ export async function showSuccess(message: string, title = "Berhasil") {
     customClass: {
       popup: "swal2-popup",
       title: "swal2-title",
-      content: "swal2-content",
     },
   });
 }
@@ -38,7 +37,6 @@ export async function showError(message: string, title = "Gagal") {
     customClass: {
       popup: "swal2-popup",
       title: "swal2-title",
-      content: "swal2-content",
     },
   });
 }

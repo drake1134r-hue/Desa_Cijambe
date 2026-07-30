@@ -36,7 +36,6 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       customClass: {
         popup: "admin-swal-popup",
         title: "admin-swal-title",
-        content: "admin-swal-content",
         confirmButton: "admin-swal-confirm",
         cancelButton: "admin-swal-cancel",
       },
