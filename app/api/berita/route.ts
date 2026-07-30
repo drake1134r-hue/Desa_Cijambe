@@ -1,7 +1,6 @@
-import { getServerSession } from "next-auth";
 import { findMany, findOne, insertOne } from "@/lib/db/index";
 import { news } from "@/lib/db/schema";
-import { parseRequestUrl, requireAdmin, parseRequestBody, parseFileField } from "@/lib/server/apiHelpers";
+import { parseRequestUrl, requireAdmin, requireAuthSession, parseRequestBody, parseFileField } from "@/lib/server/apiHelpers";
 
 export const GET = async (req: Request) => {
   try {
@@ -25,7 +24,7 @@ export const GET = async (req: Request) => {
       });
     }
 
-    const session = await getServerSession();
+    const session = await requireAuthSession(req);
     const userRole = (session?.user as any)?.role;
     const isAdmin = userRole === 1 || userRole === "1";
     const statusFilter = isAdmin ? (status || "all") : (status || "published");
@@ -47,6 +46,7 @@ export const GET = async (req: Request) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error fetching news:", error);
     return new Response(JSON.stringify({ error: "Failed to fetch news" }), {
       status: 500,
@@ -118,6 +118,7 @@ export const POST = async (req: Request) => {
       }
     );
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error creating news:", error);
     return new Response(JSON.stringify({ error: "Failed to create news" }), {
       status: 500,

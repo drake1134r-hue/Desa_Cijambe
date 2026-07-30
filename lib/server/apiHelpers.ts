@@ -8,10 +8,15 @@ export async function requireAdmin(req: Request) {
   return session;
 }
 
+function getAuthSecret() {
+  return process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+}
+
 export async function requireAuthSession(req: Request) {
   const token = await getToken({
     req: req as unknown as Parameters<typeof getToken>[0]["req"],
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: getAuthSecret(),
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {

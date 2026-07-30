@@ -24,6 +24,7 @@ export const GET = async (
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error fetching news:", error);
     return new Response(JSON.stringify({ error: "Failed to fetch news" }), {
       status: 500,
@@ -127,6 +128,7 @@ export const PUT = async (
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error updating news:", error);
     return new Response(JSON.stringify({ error: "Failed to update news" }), {
       status: 500,
@@ -162,6 +164,7 @@ export const DELETE = async (
       }
     );
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error deleting news:", error);
     return new Response(JSON.stringify({ error: "Failed to delete news" }), {
       status: 500,
