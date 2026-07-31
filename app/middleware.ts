@@ -12,14 +12,14 @@ export async function middleware(req: NextRequest) {
   }
 
   if (pathname.startsWith("/cms-login") || pathname.startsWith("/login")) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "change-this-to-a-secure-value" });
     if (token) {
       return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     }
   }
 
   if (pathname.startsWith("/admin")) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "change-this-to-a-secure-value" });
     if (!token) {
       const loginUrl = new URL("/cms-login", req.url);
       loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);

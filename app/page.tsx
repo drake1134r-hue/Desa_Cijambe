@@ -1,17 +1,20 @@
 import HomepageContent from "@/components/homepage-content";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import VillageMap from "@/components/village-map";
 import { findMany } from "@/lib/db/index";
 import { umkms } from "@/lib/db/schema";
 
-const NewsCard = dynamic(() => import("@/components/cards/news-card"), {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NewsCard = nextDynamic(() => import("@/components/cards/news-card"), {
   ssr: true,
   loading: () => <div className="h-96 bg-slate-100 animate-pulse" />,
 });
-const Potentials = dynamic(() => import("@/components/potentials-server"), { ssr: true });
-const SocialEconomy = dynamic(() => import("@/components/social-economy"), { ssr: true });
-const Footer = dynamic(() => import("@/components/footer"), { ssr: true });
-const UmkmList = dynamic(() => import("@/components/umkm-list"), { ssr: true });
+const Potentials = nextDynamic(() => import("@/components/potentials-server"), { ssr: true });
+const SocialEconomy = nextDynamic(() => import("@/components/social-economy"), { ssr: true });
+const Footer = nextDynamic(() => import("@/components/footer"), { ssr: true });
+const UmkmList = nextDynamic(() => import("@/components/umkm-list"), { ssr: true });
 
 export default async function Home() {
   type UmkmCard = {

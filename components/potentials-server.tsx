@@ -2,6 +2,9 @@ import Image from "next/image";
 import { findMany } from "@/lib/db/index";
 import { organizationStructures } from "@/lib/db/schema";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type OrganizationMember = {
   id?: string | number;
   name?: string;

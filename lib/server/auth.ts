@@ -6,7 +6,7 @@ import { findOne } from "@/lib/db/index";
 import { users } from "@/lib/db/schema";
 
 export const authOptions: AuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "change-this-to-a-secure-value",
   providers: [
     CredentialsProvider({
       name: "Credentials",
