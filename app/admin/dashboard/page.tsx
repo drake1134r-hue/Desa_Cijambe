@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 import { countDocuments, findMany } from "@/lib/db/index";
 import { news, umkms, awards, organizationStructures, infographics, homepageContents, comments } from "@/lib/db/schema";
 import { Home, Newspaper, Store, Award as AwardIcon, Network, Image as ImageIcon, MessageSquare, ArrowUpRight, Calendar, Sparkles } from "lucide-react";

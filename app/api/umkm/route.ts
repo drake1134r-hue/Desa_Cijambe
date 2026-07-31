@@ -12,7 +12,9 @@ export const GET = async (req: Request) => {
     const page = Number(url.searchParams.get("page") ?? "1");
     const limit = Number(url.searchParams.get("limit") ?? "0");
 
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      status: { $ne: "deleted" },
+    };
     if (status && status !== "all") {
       filter.status = status;
     }

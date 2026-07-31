@@ -11,7 +11,9 @@ export const GET = async (req: Request) => {
     const query = url.searchParams.get("search");
 
     const filter: Record<string, unknown> = {};
-    if (status && status !== "all") {
+    if (!status) {
+      filter.is_active = true;
+    } else if (status !== "all") {
       filter.is_active = status === "active" || status === "true";
     }
     if (query) {
