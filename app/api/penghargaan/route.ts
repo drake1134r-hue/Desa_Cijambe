@@ -44,12 +44,14 @@ export const POST = async (req: Request) => {
       return errorResponse("Invalid uploaded file", 400);
     }
 
+    const fallbackPhotoUrl = typeof body.photo === "string" ? sanitizeText(body.photo) : null;
+
     const result = await insertOne(awards.collectionName, {
       title: sanitizeText(body.title),
       year: parseNumberField(body.year, new Date().getFullYear()),
       organizer: sanitizeText(body.organizer),
       description: sanitizeContent(body.description),
-      photo_url: photoUrl ?? sanitizeText(body.photo),
+      photo_url: photoUrl ?? fallbackPhotoUrl,
       order: parseNumberField(body.order, 0),
       is_active: body.isActive ? parseBooleanField(body.isActive) : true,
     });

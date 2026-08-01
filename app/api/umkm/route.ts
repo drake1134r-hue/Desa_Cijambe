@@ -70,6 +70,8 @@ export const POST = async (req: Request) => {
       return errorResponse("Invalid uploaded file", 400);
     }
 
+    const fallbackPhotoUrl = typeof body.photo === "string" ? sanitizeText(body.photo) : null;
+
     const result = await insertOne(umkms.collectionName, {
       name: sanitizeText(body.name),
       owner: sanitizeText(body.owner),
@@ -77,7 +79,7 @@ export const POST = async (req: Request) => {
       address: sanitizeText(body.address),
       description: sanitizeContent(body.description),
       whatsapp: sanitizeText(body.whatsapp),
-      photo_url: photoUrl ?? sanitizeText(body.photo),
+      photo_url: photoUrl ?? fallbackPhotoUrl,
       google_maps_url: sanitizeText(body.googleMapsUrl),
       status: sanitizeText(body.status) || "draft",
     });

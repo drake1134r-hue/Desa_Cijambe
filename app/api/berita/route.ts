@@ -67,7 +67,7 @@ export const POST = async (req: Request) => {
       if (uploaded) {
         coverImageUrl = uploaded;
       } else if (typeof body.coverImageUrl === "string") {
-        coverImageUrl = body.coverImageUrl || null;
+        coverImageUrl = body.coverImageUrl.trim() || null;
       }
     } catch (err) {
       console.error("Failed to save uploaded cover image:", err);

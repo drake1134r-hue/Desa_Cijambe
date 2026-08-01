@@ -47,6 +47,7 @@ export const POST = async (req: Request) => {
       return errorResponse("Invalid uploaded file", 400);
     }
 
+    const fallbackPhotoUrl = typeof body.photo === "string" ? sanitizeText(body.photo) : null;
     const structureTitle = sanitizeText(body.title ?? body.position);
 
     if (!structureTitle) {
@@ -57,7 +58,7 @@ export const POST = async (req: Request) => {
       name: sanitizeText(body.name),
       title: structureTitle,
       description: sanitizeContent(body.description),
-      photo_url: photoUrl ?? sanitizeText(body.photo),
+      photo_url: photoUrl ?? fallbackPhotoUrl,
       order: parseNumberField(body.order, 0),
       is_active: body.isActive ? parseBooleanField(body.isActive) : true,
     });
