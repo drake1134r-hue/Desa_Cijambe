@@ -62,15 +62,17 @@ export const PUT = async (
 
     // process uploaded file field (if provided)
     let coverImageUrl: string | undefined = undefined;
-    try {
-      const uploaded = await parseFileField(body.coverImageUrl, "berita");
-      if (uploaded) {
-        coverImageUrl = uploaded;
-      } else {
-        coverImageUrl = normalizeStoredImageUrl(body.coverImageUrl) ?? undefined;
+    if (body.coverImageUrl !== undefined && body.coverImageUrl !== null && body.coverImageUrl !== "") {
+      try {
+        const uploaded = await parseFileField(body.coverImageUrl, "berita");
+        coverImageUrl = uploaded ?? normalizeStoredImageUrl(body.coverImageUrl) ?? undefined;
+      } catch (err) {
+        console.error("Failed to save uploaded cover image:", err);
+        return new Response(
+          JSON.stringify({ error: "Upload gambar sampul gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar." }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
-    } catch (err) {
-      console.warn("Failed to process uploaded file:", err);
     }
 
     const article = await findOne(news.collectionName, { id });

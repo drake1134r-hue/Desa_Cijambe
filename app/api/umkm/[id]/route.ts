@@ -2,7 +2,7 @@ import { findOne, updateOne, deleteOne } from "@/lib/db/index";
 import { umkms } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/server/apiHelpers";
 import { sanitizeText, sanitizeContent } from "@/lib/server/validation";
-import { parseFileField, parseRequestBody, jsonResponse, errorResponse } from "@/lib/server/apiHelpers";
+import { parseFileField, parseRequestBody, jsonResponse, errorResponse, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -28,10 +28,13 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     const body = await parseRequestBody(req);
 
     let photoUrl: string | null = null;
-    try {
-      photoUrl = await parseFileField(body.photo, "umkm");
-    } catch (err) {
-      console.warn("Failed to save uploaded photo for umkm:", err);
+    if (body.photo !== undefined && body.photo !== null && body.photo !== "") {
+      try {
+        photoUrl = await parseFileField(body.photo, "umkm");
+      } catch (err) {
+        console.error("Failed to save uploaded photo for umkm:", err);
+        return errorResponse("Upload foto gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar.", 400);
+      }
     }
 
     const data: Record<string, unknown> = {
@@ -46,8 +49,11 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
 
     if (photoUrl) {
       data.photo_url = photoUrl;
-    } else if (body.photo) {
-      data.photo_url = sanitizeText(body.photo);
+    } else {
+      const normalizedPhotoUrl = normalizeStoredImageUrl(body.photo);
+      if (normalizedPhotoUrl) {
+        data.photo_url = normalizedPhotoUrl;
+      }
     }
 
     if (body.status !== undefined) {

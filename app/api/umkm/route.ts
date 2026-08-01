@@ -63,10 +63,13 @@ export const POST = async (req: Request) => {
     const body = await parseRequestBody(req);
 
     let photoUrl: string | null = null;
-    try {
-      photoUrl = await parseFileField(body.photo, "umkm");
-    } catch (err) {
-      console.warn("Failed to save uploaded photo for umkm:", err);
+    if (body.photo !== undefined && body.photo !== null && body.photo !== "") {
+      try {
+        photoUrl = await parseFileField(body.photo, "umkm");
+      } catch (err) {
+        console.error("Failed to save uploaded photo for umkm:", err);
+        return errorResponse("Upload foto gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar.", 400);
+      }
     }
 
     const fallbackPhotoUrl = normalizeStoredImageUrl(body.photo);

@@ -60,17 +60,18 @@ export const POST = async (req: Request) => {
 
     const body = await parseRequestBody(req);
     const { title, summary, content, categoryId, status } = body;
-    // handle file upload if present
     let coverImageUrl: string | null = null;
-    try {
-      const uploaded = await parseFileField(body.coverImageUrl, "berita");
-      if (uploaded) {
-        coverImageUrl = uploaded;
-      } else {
-        coverImageUrl = normalizeStoredImageUrl(body.coverImageUrl);
+    if (body.coverImageUrl !== undefined && body.coverImageUrl !== null && body.coverImageUrl !== "") {
+      try {
+        const uploaded = await parseFileField(body.coverImageUrl, "berita");
+        coverImageUrl = uploaded ?? normalizeStoredImageUrl(body.coverImageUrl);
+      } catch (err) {
+        console.error("Failed to save uploaded cover image:", err);
+        return new Response(
+          JSON.stringify({ error: "Upload gambar sampul gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar." }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
-    } catch (err) {
-      console.warn("Failed to save uploaded cover image:", err);
     }
 
     if (!title || !summary || !content) {
