@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image";
 import { confirmDelete, showError, showSuccess } from "@/lib/admin/swal";
 import { adminResourceConfigs } from "@/lib/admin/resources";
 import { Pagination } from "@/components/ui/pagination";
@@ -22,7 +21,7 @@ function Avatar({ name, photoUrl }: { name?: string; photoUrl?: string | null })
   return (
     <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-100 bg-emerald-50 text-xs font-semibold text-emerald-700">
       {photoUrl ? (
-        <Image src={photoUrl} alt={name ?? "Foto"} fill sizes="40px" className="object-cover" />
+        <img src={photoUrl} alt={name ?? "Foto"} className="h-full w-full object-cover" />
       ) : (
         <span>{getInitials(name)}</span>
       )}

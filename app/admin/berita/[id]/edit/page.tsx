@@ -176,29 +176,33 @@ export default function EditNewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow">
-        <div className="px-6 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Edit Berita
-          </h1>
+    <main className="min-h-screen bg-slate-50 pt-20">
+      <section className="bg-emerald-600 px-6 py-16 text-white sm:px-12">
+        <div className="mx-auto max-w-4xl">
+          <p className="text-sm uppercase tracking-[0.35em] text-emerald-200">Admin Panel</p>
+          <h1 className="mt-4 text-4xl font-semibold">Edit Berita</h1>
+        </div>
+      </section>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700">{error}</p>
-            </div>
-          )}
+      <section className="px-6 py-20 sm:px-12">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            {error && (
+              <div className="mb-6 rounded-[2rem] border border-red-200 bg-red-50 p-4 text-red-700">
+                <p>{error}</p>
+              </div>
+            )}
 
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-700">{successMessage}</p>
-            </div>
-          )}
+            {successMessage && (
+              <div className="mb-6 rounded-[2rem] border border-green-200 bg-green-50 p-4 text-green-700">
+                <p>{successMessage}</p>
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
+            <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="title" className="block text-sm font-semibold text-slate-950">
                 Judul
               </label>
               <input
@@ -208,14 +212,14 @@ export default function EditNewsPage() {
                 value={formData.title}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Masukkan judul berita"
               />
             </div>
 
             {/* Summary */}
-            <div>
-              <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="summary" className="block text-sm font-semibold text-slate-950">
                 Ringkasan
               </label>
               <textarea
@@ -225,14 +229,14 @@ export default function EditNewsPage() {
                 onChange={handleInputChange}
                 required
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Masukkan ringkasan berita"
               />
             </div>
 
             {/* Content */}
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="content" className="block text-sm font-semibold text-slate-950">
                 Konten
               </label>
               <textarea
@@ -242,14 +246,14 @@ export default function EditNewsPage() {
                 onChange={handleInputChange}
                 required
                 rows={10}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Masukkan konten berita (HTML diizinkan)"
               />
             </div>
 
             {/* Cover Image URL */}
-            <div>
-              <label htmlFor="coverImageUrl" className="block text-sm font-medium text-gray-700 mb-2">Gambar Sampul (upload)</label>
+            <div className="space-y-2">
+              <label htmlFor="coverImageUrl" className="block text-sm font-semibold text-slate-950">Gambar Sampul (upload)</label>
               {formData.coverImageUrl && !formData.coverImageFile && (
                 <div className="mb-2">
                   <img src={formData.coverImageUrl} alt="cover" className="h-40 w-auto rounded-md object-cover" />
@@ -261,15 +265,15 @@ export default function EditNewsPage() {
                 name="coverImageUrl"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
             {/* Category removed from edit form */}
 
             {/* Status */}
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="status" className="block text-sm font-semibold text-slate-950">
                 Status
               </label>
               <select
@@ -277,7 +281,7 @@ export default function EditNewsPage() {
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="draft">Draft</option>
                 <option value="published">Dipublikasikan</option>
@@ -287,26 +291,26 @@ export default function EditNewsPage() {
 
             {/* extra admin fields removed to match add form */}
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4 justify-end pt-6 border-t">
+            <div className="flex gap-4 justify-end pt-6">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+                className="flex-1 rounded-full border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-slate-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 font-medium transition"
+                className="flex-1 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {submitting ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

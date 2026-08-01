@@ -97,7 +97,11 @@ export default function EditStrukturPage() {
         body: form,
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Gagal memperbarui data");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        const message = payload?.error || "Gagal memperbarui data";
+        throw new Error(message);
+      }
       await showSuccess("Perubahan berhasil disimpan.");
       router.push("/admin/struktur");
     } catch (err) {

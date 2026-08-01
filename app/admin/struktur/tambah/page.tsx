@@ -54,8 +54,9 @@ export default function TambahStrukturPage() {
         credentials: "include",
       });
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Gagal menyimpan (${res.status}): ${text}`);
+        const payload = await res.json().catch(() => null);
+        const message = payload?.error || await res.text();
+        throw new Error(`Gagal menyimpan (${res.status}): ${message}`);
       }
       await showSuccess("Data berhasil disimpan.");
       router.push("/admin/struktur");
