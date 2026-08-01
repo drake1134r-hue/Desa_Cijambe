@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
 
 async function streamToBuffer(stream: any) {
   const chunks: Uint8Array[] = [];
@@ -65,7 +65,17 @@ async function uploadToSupabase(file: any, folder: string, safeName: string, buf
   }
 
   const { data: publicData } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
-  return publicData.publicUrl;
+  const publicUrl = publicData?.publicUrl?.trim();
+  if (publicUrl) {
+    return publicUrl;
+  }
+
+  const { data: signedData, error: signedError } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(storagePath, 60 * 60 * 24);
+  if (!signedError && signedData?.signedUrl) {
+    return signedData.signedUrl;
+  }
+
+  throw new Error(signedError?.message ?? "Tidak dapat menghasilkan URL gambar yang bisa ditampilkan.");
 }
 
 export async function saveUploadedFile(file: any, folder: string) {

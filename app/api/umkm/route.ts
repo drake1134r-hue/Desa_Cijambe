@@ -2,7 +2,7 @@ import { findMany, findOne, insertOne } from "@/lib/db/index";
 import { umkms } from "@/lib/db/schema";
 import { parseRequestUrl, requireAdmin } from "@/lib/server/apiHelpers";
 import { sanitizeText, sanitizeContent } from "@/lib/server/validation";
-import { parseFileField, parseRequestBody, jsonResponse, errorResponse } from "@/lib/server/apiHelpers";
+import { parseFileField, parseRequestBody, jsonResponse, errorResponse, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (req: Request) => {
   try {
@@ -70,7 +70,7 @@ export const POST = async (req: Request) => {
       return errorResponse("Invalid uploaded file", 400);
     }
 
-    const fallbackPhotoUrl = typeof body.photo === "string" ? sanitizeText(body.photo) : null;
+    const fallbackPhotoUrl = normalizeStoredImageUrl(body.photo);
 
     const result = await insertOne(umkms.collectionName, {
       name: sanitizeText(body.name),

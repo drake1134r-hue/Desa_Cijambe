@@ -62,13 +62,24 @@ export function parseNumberField(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+export function normalizeStoredImageUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed;
+}
+
 export async function parseFileField(value: unknown, folder: string) {
+  // Allow string URLs to pass through verbatim so edit/create routes can retain a known image source.
+  if (typeof value === "string") {
+    return normalizeStoredImageUrl(value);
+  }
+
   // Accept file-like objects from formData. Avoid instanceof File since runtime may differ.
   if (!value || typeof value !== "object") return null;
   const maybeFile: any = value as any;
   if (!maybeFile.name) return null;
-  // If it's already a string (URL), skip
-  if (typeof maybeFile === "string") return null;
+
   try {
     return await saveUploadedFile(maybeFile, folder);
   } catch (err) {

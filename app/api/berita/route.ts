@@ -1,6 +1,6 @@
 import { findMany, findOne, insertOne } from "@/lib/db/index";
 import { news } from "@/lib/db/schema";
-import { parseRequestUrl, requireAdmin, requireAuthSession, parseRequestBody, parseFileField } from "@/lib/server/apiHelpers";
+import { parseRequestUrl, requireAdmin, requireAuthSession, parseRequestBody, parseFileField, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (req: Request) => {
   try {
@@ -66,8 +66,8 @@ export const POST = async (req: Request) => {
       const uploaded = await parseFileField(body.coverImageUrl, "berita");
       if (uploaded) {
         coverImageUrl = uploaded;
-      } else if (typeof body.coverImageUrl === "string") {
-        coverImageUrl = body.coverImageUrl.trim() || null;
+      } else {
+        coverImageUrl = normalizeStoredImageUrl(body.coverImageUrl);
       }
     } catch (err) {
       console.error("Failed to save uploaded cover image:", err);
