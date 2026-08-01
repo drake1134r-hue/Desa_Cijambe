@@ -35,7 +35,14 @@ export const POST = async (req: Request) => {
     await requireAdmin(req);
 
     const body = await parseRequestBody(req);
-    const photoUrl = await parseFileField(body.photo, "penghargaan");
+
+    let photoUrl: string | null = null;
+    try {
+      photoUrl = await parseFileField(body.photo, "penghargaan");
+    } catch (err) {
+      console.error("Failed to save uploaded photo for penghargaan:", err);
+      return errorResponse("Invalid uploaded file", 400);
+    }
 
     const result = await insertOne(awards.collectionName, {
       title: sanitizeText(body.title),

@@ -61,7 +61,14 @@ export const POST = async (req: Request) => {
     await requireAdmin(req);
 
     const body = await parseRequestBody(req);
-    const photoUrl = await parseFileField(body.photo, "umkm");
+
+    let photoUrl: string | null = null;
+    try {
+      photoUrl = await parseFileField(body.photo, "umkm");
+    } catch (err) {
+      console.error("Failed to save uploaded photo for umkm:", err);
+      return errorResponse("Invalid uploaded file", 400);
+    }
 
     const result = await insertOne(umkms.collectionName, {
       name: sanitizeText(body.name),

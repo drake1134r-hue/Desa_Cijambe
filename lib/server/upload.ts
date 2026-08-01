@@ -112,13 +112,21 @@ export async function saveUploadedFile(file: any, folder: string) {
       return uploadedUrl;
     }
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+
     if (process.env.NODE_ENV === "production") {
       throw new Error(
-        `Gagal mengunggah ke Supabase Storage: ${err instanceof Error ? err.message : String(err)}`
+        `Gagal mengunggah ke Supabase Storage: ${message}. Pastikan variabel lingkungan SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah dikonfigurasi di Vercel.`
       );
     }
 
     console.warn("Supabase Storage tidak tersedia, fallback ke upload lokal:", err);
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Upload file tidak tersedia pada environment production. Pastikan variabel lingkungan Supabase storage sudah dikonfigurasi dengan benar."
+    );
   }
 
   const uploadDir = path.join(process.cwd(), "public", "uploads", folder);

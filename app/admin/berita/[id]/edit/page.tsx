@@ -123,8 +123,11 @@ export default function EditNewsPage() {
       payload.append("content", formData.content);
       payload.append("status", formData.status);
       // category is not editable in this form (kept unchanged)
-      if (formData.coverImageFile) payload.append("coverImageUrl", formData.coverImageFile);
-      else payload.append("coverImageUrl", formData.coverImageUrl || "");
+      if (formData.coverImageFile) {
+        payload.append("coverImageUrl", formData.coverImageFile);
+      } else if (formData.coverImageUrl) {
+        payload.append("coverImageUrl", formData.coverImageUrl);
+      }
 
       const response = await fetch(`/api/berita/${id}`, {
         method: "PUT",
@@ -192,7 +195,7 @@ export default function EditNewsPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">

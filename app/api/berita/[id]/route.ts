@@ -64,8 +64,11 @@ export const PUT = async (
     let coverImageUrl: string | undefined = undefined;
     try {
       const uploaded = await parseFileField(body.coverImageUrl, "berita");
-      if (uploaded) coverImageUrl = uploaded;
-      else if (typeof body.coverImageUrl === "string") coverImageUrl = body.coverImageUrl;
+      if (uploaded) {
+        coverImageUrl = uploaded;
+      } else if (typeof body.coverImageUrl === "string" && body.coverImageUrl.trim() !== "") {
+        coverImageUrl = body.coverImageUrl;
+      }
     } catch (err) {
       console.error("Failed to process uploaded file:", err);
       return new Response(JSON.stringify({ error: "Invalid uploaded file" }), { status: 400 });

@@ -133,7 +133,7 @@ export default function EditPenghargaanPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <form onSubmit={handleSubmit} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" encType="multipart/form-data">
             <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4 sm:px-8">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                 <FileText className="h-4.5 w-4.5" />

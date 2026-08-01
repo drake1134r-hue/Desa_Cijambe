@@ -114,6 +114,7 @@ export default function TambahBeritaPage() {
           <form
             onSubmit={handleSubmit}
             className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm"
+            encType="multipart/form-data"
           >
             {error && (
               <div className="rounded-[2rem] border border-red-200 bg-red-50 p-4 text-red-700">

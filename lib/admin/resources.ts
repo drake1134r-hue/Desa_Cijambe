@@ -158,8 +158,8 @@ export const adminResourceConfigs: Record<AdminResourceKey, AdminResourceConfig>
         name: "unit",
         label: "Satuan",
         type: "select",
-        required: true,
-        placeholder: "Pilih satuan",
+        required: false,
+        placeholder: "Biarkan kosong jika tidak ada satuan",
         options: [
           { value: "Jiwa", label: "Jiwa" },
           { value: "KK", label: "KK" },

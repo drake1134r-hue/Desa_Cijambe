@@ -26,7 +26,14 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await parseRequestBody(req);
-    const photoUrl = await parseFileField(body.photo, "penghargaan");
+
+    let photoUrl: string | null = null;
+    try {
+      photoUrl = await parseFileField(body.photo, "penghargaan");
+    } catch (err) {
+      console.error("Failed to save uploaded photo for penghargaan:", err);
+      return errorResponse("Invalid uploaded file", 400);
+    }
 
     const data: Record<string, unknown> = {
       title: sanitizeText(body.title),

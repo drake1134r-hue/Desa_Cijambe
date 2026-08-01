@@ -124,6 +124,7 @@ export default function TambahStrukturPage() {
           <form
             onSubmit={handleSubmit}
             className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+            encType="multipart/form-data"
           >
             <div className="grid gap-5 sm:grid-cols-2">
               {config.fields.map((field) => {
