@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { requireAuthSession, requireAdmin } from "@/lib/server/apiHelpers";
 import { findOne, updateOne, deleteOne } from "@/lib/db/index";
 import { news } from "@/lib/db/schema";
-import { parseRequestBody, parseFileField } from "@/lib/server/apiHelpers";
+import { parseRequestBody, parseFileField, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (
   _req: Request,
@@ -66,12 +66,11 @@ export const PUT = async (
       const uploaded = await parseFileField(body.coverImageUrl, "berita");
       if (uploaded) {
         coverImageUrl = uploaded;
-      } else if (typeof body.coverImageUrl === "string" && body.coverImageUrl.trim() !== "") {
-        coverImageUrl = body.coverImageUrl;
+      } else {
+        coverImageUrl = normalizeStoredImageUrl(body.coverImageUrl) ?? undefined;
       }
     } catch (err) {
-      console.error("Failed to process uploaded file:", err);
-      return new Response(JSON.stringify({ error: "Invalid uploaded file" }), { status: 400 });
+      console.warn("Failed to process uploaded file:", err);
     }
 
     const article = await findOne(news.collectionName, { id });

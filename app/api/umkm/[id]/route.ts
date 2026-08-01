@@ -31,8 +31,7 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     try {
       photoUrl = await parseFileField(body.photo, "umkm");
     } catch (err) {
-      console.error("Failed to save uploaded photo for umkm:", err);
-      return errorResponse("Invalid uploaded file", 400);
+      console.warn("Failed to save uploaded photo for umkm:", err);
     }
 
     const data: Record<string, unknown> = {

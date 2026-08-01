@@ -66,7 +66,12 @@ export function normalizeStoredImageUrl(value: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
-  return trimmed;
+
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+
+  return null;
 }
 
 export async function parseFileField(value: unknown, folder: string) {

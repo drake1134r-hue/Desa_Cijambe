@@ -43,8 +43,7 @@ export const POST = async (req: Request) => {
     try {
       photoUrl = await parseFileField(body.photo, "struktur-organisasi");
     } catch (err) {
-      console.error("Failed to save uploaded photo for struktur-organisasi:", err);
-      return errorResponse("Invalid uploaded file", 400);
+      console.warn("Failed to save uploaded photo for struktur-organisasi:", err);
     }
 
     const fallbackPhotoUrl = normalizeStoredImageUrl(body.photo);

@@ -70,8 +70,7 @@ export const POST = async (req: Request) => {
         coverImageUrl = normalizeStoredImageUrl(body.coverImageUrl);
       }
     } catch (err) {
-      console.error("Failed to save uploaded cover image:", err);
-      return new Response(JSON.stringify({ error: "Invalid uploaded file" }), { status: 400 });
+      console.warn("Failed to save uploaded cover image:", err);
     }
 
     if (!title || !summary || !content) {

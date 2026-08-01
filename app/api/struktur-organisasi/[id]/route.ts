@@ -32,8 +32,7 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     try {
       photoUrl = await parseFileField(body.photo, "struktur-organisasi");
     } catch (err) {
-      console.error("Failed to save uploaded photo for struktur-organisasi:", err);
-      return errorResponse("Invalid uploaded file", 400);
+      console.warn("Failed to save uploaded photo for struktur-organisasi:", err);
     }
 
     const structureTitle = sanitizeText(body.title ?? body.position);
