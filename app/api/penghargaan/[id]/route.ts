@@ -2,7 +2,7 @@ import { findOne, updateOne, deleteOne } from "@/lib/db/index";
 import { awards } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/server/apiHelpers";
 import { sanitizeText, sanitizeContent } from "@/lib/server/validation";
-import { parseBooleanField, parseFileField, parseNumberField, parseRequestBody, jsonResponse, errorResponse } from "@/lib/server/apiHelpers";
+import { parseBooleanField, parseFileField, parseNumberField, parseRequestBody, jsonResponse, errorResponse, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -31,8 +31,7 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     try {
       photoUrl = await parseFileField(body.photo, "penghargaan");
     } catch (err) {
-      console.error("Failed to save uploaded photo for penghargaan:", err);
-      return errorResponse("Invalid uploaded file", 400);
+      console.warn("Failed to save uploaded photo for penghargaan:", err);
     }
 
     const data: Record<string, unknown> = {
@@ -44,8 +43,11 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
 
     if (photoUrl) {
       data.photo_url = photoUrl;
-    } else if (body.photo) {
-      data.photo_url = sanitizeText(body.photo);
+    } else {
+      const normalizedPhotoUrl = normalizeStoredImageUrl(body.photo);
+      if (normalizedPhotoUrl) {
+        data.photo_url = normalizedPhotoUrl;
+      }
     }
 
     const orderValue = parseNumberField(body.order, undefined as any);

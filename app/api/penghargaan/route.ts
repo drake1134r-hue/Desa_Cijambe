@@ -2,7 +2,7 @@ import { findMany, findOne, insertOne } from "@/lib/db/index";
 import { awards } from "@/lib/db/schema";
 import { parseRequestUrl, requireAdmin } from "@/lib/server/apiHelpers";
 import { sanitizeText, sanitizeContent } from "@/lib/server/validation";
-import { parseBooleanField, parseFileField, parseNumberField, parseRequestBody, jsonResponse, errorResponse } from "@/lib/server/apiHelpers";
+import { parseBooleanField, parseFileField, parseNumberField, parseRequestBody, jsonResponse, errorResponse, normalizeStoredImageUrl } from "@/lib/server/apiHelpers";
 
 export const GET = async (req: Request) => {
   try {
@@ -40,11 +40,10 @@ export const POST = async (req: Request) => {
     try {
       photoUrl = await parseFileField(body.photo, "penghargaan");
     } catch (err) {
-      console.error("Failed to save uploaded photo for penghargaan:", err);
-      return errorResponse("Invalid uploaded file", 400);
+      console.warn("Failed to save uploaded photo for penghargaan:", err);
     }
 
-    const fallbackPhotoUrl = typeof body.photo === "string" ? sanitizeText(body.photo) : null;
+    const fallbackPhotoUrl = normalizeStoredImageUrl(body.photo);
 
     const result = await insertOne(awards.collectionName, {
       title: sanitizeText(body.title),
