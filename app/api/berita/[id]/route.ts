@@ -67,9 +67,10 @@ export const PUT = async (
         const uploaded = await parseFileField(body.coverImageUrl, "berita");
         coverImageUrl = uploaded ?? normalizeStoredImageUrl(body.coverImageUrl) ?? undefined;
       } catch (err) {
-        console.error("Failed to save uploaded cover image:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("Failed to save uploaded cover image:", errorMsg);
         return new Response(
-          JSON.stringify({ error: "Upload gambar sampul gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar." }),
+          JSON.stringify({ error: `Upload gambar sampul gagal: ${errorMsg}` }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }

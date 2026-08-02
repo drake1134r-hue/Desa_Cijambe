@@ -67,8 +67,9 @@ export const POST = async (req: Request) => {
       try {
         photoUrl = await parseFileField(body.photo, "umkm");
       } catch (err) {
-        console.error("Failed to save uploaded photo for umkm:", err);
-        return errorResponse("Upload foto gagal. Pastikan file valid dan konfigurasi Supabase storage sudah benar.", 400);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("Failed to save uploaded photo for umkm:", errorMsg);
+        return errorResponse(`Upload foto gagal: ${errorMsg}`, 400);
       }
     }
 
