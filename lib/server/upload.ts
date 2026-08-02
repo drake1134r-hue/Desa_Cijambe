@@ -44,24 +44,77 @@ function isAllowedImageType(mimeType: string | undefined, fileName: string): boo
 }
 
 async function streamToBuffer(stream: any) {
+  if (!stream) {
+    throw new Error("Stream kosong");
+  }
+
+  console.log("streamToBuffer - START, checking stream type...");
   const chunks: Uint8Array[] = [];
   const reader = stream.getReader?.();
+  
   if (reader) {
     // web ReadableStream
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
+    console.log("streamToBuffer - Using web ReadableStream");
+    try {
+      let chunkCount = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log(`streamToBuffer - Web stream done, received ${chunkCount} chunks`);
+          break;
+        }
+        if (value) {
+          chunkCount++;
+          chunks.push(value);
+        }
+      }
+    } catch (err) {
+      throw new Error(`Web stream read error: ${err instanceof Error ? err.message : String(err)}`);
     }
-    return Buffer.concat(chunks.map((c) => Buffer.from(c)));
+    
+    if (chunks.length === 0) {
+      throw new Error("Stream kosong (tidak ada data)");
+    }
+    
+    const result = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+    console.log(`streamToBuffer - Web stream success, result size: ${result.length}`);
+    return result;
   }
 
   // Node.js stream fallback
+  console.log("streamToBuffer - Using Node.js stream");
   return new Promise<Buffer>((resolve, reject) => {
+    let hasData = false;
+    let chunkCount = 0;
     const bufs: Buffer[] = [];
-    stream.on("data", (d: Buffer) => bufs.push(Buffer.from(d)));
-    stream.on("end", () => resolve(Buffer.concat(bufs)));
-    stream.on("error", (err: any) => reject(err));
+    
+    stream.on("data", (d: any) => {
+      hasData = true;
+      chunkCount++;
+      bufs.push(Buffer.from(d));
+    });
+    
+    stream.on("end", () => {
+      console.log(`streamToBuffer - Node stream end, received ${chunkCount} chunks`);
+      if (!hasData) {
+        reject(new Error("Node stream kosong (tidak ada data)"));
+      } else {
+        const result = Buffer.concat(bufs);
+        console.log(`streamToBuffer - Node stream success, result size: ${result.length}`);
+        resolve(result);
+      }
+    });
+    
+    stream.on("error", (err: any) => {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`streamToBuffer - Node stream error: ${errMsg}`);
+      reject(new Error(`Node stream error: ${errMsg}`));
+    });
+    
+    // Timeout after 30 seconds
+    setTimeout(() => {
+      reject(new Error("Stream read timeout"));
+    }, 30000);
   });
 }
 
@@ -123,15 +176,17 @@ export async function saveUploadedFile(file: any, folder: string) {
   const fileType = file?.type || "";
   let fileNameRaw = file?.name || "";
 
-  // Log incoming file info for debugging
-  if (process.env.NODE_ENV === "development") {
-    console.log("DEBUG saveUploadedFile:", {
-      hasName: !!fileNameRaw,
-      fileName: fileNameRaw,
-      fileType,
-      fileSize: file?.size,
-    });
-  }
+  // Log incoming file info for debugging (always)
+  console.log("saveUploadedFile START:", {
+    hasName: !!fileNameRaw,
+    fileName: fileNameRaw || "unknown",
+    fileType: fileType || "unknown",
+    fileSize: file?.size,
+    hasArrayBuffer: typeof file.arrayBuffer === "function",
+    hasStream: typeof file.stream === "function",
+    isBuffer: file instanceof Buffer,
+    hasReadableState: !!file._readableState,
+  });
 
   // Extract and sanitize file name from path
   let fileName = fileNameRaw
@@ -173,27 +228,102 @@ export async function saveUploadedFile(file: any, folder: string) {
   const safeName = `${Date.now()}-${randomUUID()}${extension}`;
 
   // Read file to buffer FIRST, then check size
-  let buffer: Buffer;
-  try {
-    if (typeof file.arrayBuffer === "function") {
-      buffer = Buffer.from(await file.arrayBuffer());
-    } else if (typeof file.stream === "function") {
-      const s = file.stream();
-      buffer = await streamToBuffer(s);
-    } else if (file instanceof Buffer) {
-      buffer = file;
-    } else if (file._readableState) {
-      // node stream
-      buffer = await streamToBuffer(file);
-    } else {
-      throw new Error("Tidak dapat membaca file upload: format tidak didukung.");
+  let buffer: Buffer | null = null;
+  let readError: Error | null = null;
+
+  // Try multiple methods to read file
+  if (typeof file.arrayBuffer === "function") {
+    try {
+      console.log("Attempting arrayBuffer read...");
+      const ab = await file.arrayBuffer();
+      console.log("arrayBuffer result:", { byteLength: ab?.byteLength, type: typeof ab });
+      if (ab && ab.byteLength > 0) {
+        buffer = Buffer.from(ab);
+        console.log("Successfully read via arrayBuffer, buffer size:", buffer.length);
+      }
+    } catch (err) {
+      readError = err instanceof Error ? err : new Error(String(err));
+      console.error("arrayBuffer error:", readError.message);
     }
-  } catch (err) {
-    throw new Error(`Gagal memproses file upload: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // Fallback: try stream
+  if (!buffer && typeof file.stream === "function") {
+    try {
+      console.log("Attempting stream read...");
+      const s = file.stream();
+      const streamBuffer = await streamToBuffer(s);
+      console.log("Stream result:", { bufferLength: streamBuffer?.length });
+      if (streamBuffer && streamBuffer.length > 0) {
+        buffer = streamBuffer;
+        readError = null;
+        console.log("Successfully read via stream, buffer size:", buffer.length);
+      } else {
+        readError = new Error("Stream mengembalikan buffer kosong");
+      }
+    } catch (err) {
+      if (!readError) {
+        readError = err instanceof Error ? err : new Error(String(err));
+      }
+      console.error("Stream error:", readError.message);
+    }
+  }
+
+  // Fallback: handle if already a Buffer
+  if (!buffer && file instanceof Buffer) {
+    try {
+      console.log("File is already a Buffer, size:", file.length);
+      if (file.length > 0) {
+        buffer = file;
+        readError = null;
+        console.log("Using Buffer directly, size:", buffer.length);
+      } else {
+        readError = new Error("Buffer kosong");
+      }
+    } catch (err) {
+      readError = err instanceof Error ? err : new Error(String(err));
+      console.error("Buffer check error:", readError.message);
+    }
+  }
+
+  // Fallback: try Node stream if present
+  if (!buffer && file._readableState) {
+    try {
+      console.log("Attempting Node stream read...");
+      const nodeBuffer = await streamToBuffer(file);
+      console.log("Node stream result:", { bufferLength: nodeBuffer?.length });
+      if (nodeBuffer && nodeBuffer.length > 0) {
+        buffer = nodeBuffer;
+        readError = null;
+        console.log("Successfully read via Node stream, buffer size:", buffer.length);
+      } else {
+        readError = new Error("Node stream mengembalikan buffer kosong");
+      }
+    } catch (err) {
+      if (!readError) {
+        readError = err instanceof Error ? err : new Error(String(err));
+      }
+      console.error("Node stream error:", readError.message);
+    }
+  }
+
+  // If still no buffer, throw detailed error
+  if (!buffer) {
+    const detailMsg = readError?.message || "Format tidak didukung";
+    console.error("Failed to read file buffer:", {
+      error: detailMsg,
+      tryMethods: {
+        arrayBuffer: typeof file.arrayBuffer === "function",
+        stream: typeof file.stream === "function",
+        Buffer: file instanceof Buffer,
+        nodeStream: !!file._readableState,
+      },
+    });
+    throw new Error(`Gagal membaca file upload: ${detailMsg}. Metode: arrayBuffer=${typeof file.arrayBuffer === "function"}, stream=${typeof file.stream === "function"}, Buffer=${file instanceof Buffer}`);
   }
 
   // NOW check buffer size (after successfully reading)
-  if (!buffer || buffer.length === 0) {
+  if (buffer.length === 0) {
     throw new Error("File kosong atau tidak dapat dibaca.");
   }
 
@@ -201,14 +331,7 @@ export async function saveUploadedFile(file: any, folder: string) {
     throw new Error("Ukuran file melebihi 1 MB.");
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("DEBUG processed file:", {
-      sanitizedName: fileName,
-      extension,
-      type: fileType || "unknown",
-      bufferSize: buffer.length,
-    });
-  }
+  console.log("saveUploadedFile SUCCESS - buffer ready, size:", buffer.length);
 
   try {
     const uploadedUrl = await uploadToSupabase(file, folder, safeName, buffer);
