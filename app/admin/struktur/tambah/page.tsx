@@ -193,20 +193,23 @@ export default function TambahStrukturPage() {
                             />
                           </label>
                         ) : (
-                          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50/40">
-                            <ImagePlus className="h-5 w-5 text-slate-400" />
-                            <span>
-                              <span className="font-semibold text-emerald-600">Pilih file</span> atau seret ke sini
-                            </span>
-                            <input
-                              type="file"
-                              name={field.name}
-                              accept="image/*"
-                              required={field.required}
-                              className="hidden"
-                              onChange={(e) => handleFileChange(field.name, e.target.files)}
-                            />
-                          </label>
+                          <div>
+                            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50/40">
+                              <ImagePlus className="h-5 w-5 text-slate-400" />
+                              <span>
+                                <span className="font-semibold text-emerald-600">Pilih file</span> atau seret ke sini
+                              </span>
+                              <input
+                                type="file"
+                                name={field.name}
+                                accept="image/*"
+                                required={field.required}
+                                className="hidden"
+                                onChange={(e) => handleFileChange(field.name, e.target.files)}
+                              />
+                            </label>
+                            <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
+                          </div>
                         )}
                       </div>
                     ) : (

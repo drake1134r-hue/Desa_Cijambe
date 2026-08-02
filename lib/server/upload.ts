@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
 const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
 
 async function streamToBuffer(stream: any) {
@@ -89,7 +89,7 @@ export async function saveUploadedFile(file: any, folder: string) {
   }
 
   if (fileSize !== undefined && fileSize > MAX_FILE_SIZE) {
-    throw new Error("Ukuran file melebihi 5 MB.");
+    throw new Error("Ukuran file melebihi 1 MB.");
   }
 
   const fileName = String(fileNameRaw).replace(/[^a-zA-Z0-9.-]/g, "_");

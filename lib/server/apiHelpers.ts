@@ -83,7 +83,15 @@ export async function parseFileField(value: unknown, folder: string) {
   // Accept file-like objects from formData. Avoid instanceof File since runtime may differ.
   if (!value || typeof value !== "object") return null;
   const maybeFile: any = value as any;
-  if (!maybeFile.name) return null;
+
+  const hasFileLikeShape =
+    typeof maybeFile.name === "string" ||
+    typeof maybeFile.type === "string" ||
+    typeof maybeFile.size === "number" ||
+    typeof maybeFile.arrayBuffer === "function" ||
+    typeof maybeFile.stream === "function";
+
+  if (!hasFileLikeShape) return null;
 
   try {
     return await saveUploadedFile(maybeFile, folder);

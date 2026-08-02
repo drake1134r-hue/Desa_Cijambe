@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { findMany } from "@/lib/db/index";
 import { organizationStructures } from "@/lib/db/schema";
 
@@ -80,13 +79,18 @@ function Avatar({
   size?: "md" | "lg";
 }) {
   const dimension = size === "lg" ? "h-20 w-20 text-lg" : "h-16 w-16 text-base";
-  const sizePx = size === "lg" ? "80px" : "64px";
+
   return (
     <div
       className={`relative ${dimension} shrink-0 overflow-hidden rounded-full border border-emerald-200 bg-emerald-100 font-semibold text-emerald-700 ring-4 ring-white shadow-sm`}
     >
       {photoUrl ? (
-        <Image src={photoUrl} alt={name ?? "Foto"} fill sizes={sizePx} className="object-cover" />
+        <img
+          src={photoUrl}
+          alt={name ?? "Foto"}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
       ) : (
         <span className="flex h-full w-full items-center justify-center">{getInitials(name)}</span>
       )}

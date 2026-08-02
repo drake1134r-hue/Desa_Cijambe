@@ -254,6 +254,7 @@ export default function EditStrukturPage() {
                             onChange={(e) => handleFileChange(field.name, e.target.files)}
                           />
                         </label>
+                        <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
                       </div>
                     ) : (
                       <input

@@ -132,13 +132,16 @@ export default function TambahUmkmPage() {
                         ))}
                       </select>
                     ) : field.type === "file" ? (
-                      <input
-                        type="file"
-                        name={field.name}
-                        accept="image/*"
-                        required={field.required}
-                        className={`${inputClass} cursor-pointer border-dashed bg-slate-50`}
-                      />
+                      <div>
+                        <input
+                          type="file"
+                          name={field.name}
+                          accept="image/*"
+                          required={field.required}
+                          className={`${inputClass} cursor-pointer border-dashed bg-slate-50`}
+                        />
+                        <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
+                      </div>
                     ) : (
                       <input
                         type={field.type === "number" ? "number" : field.type}

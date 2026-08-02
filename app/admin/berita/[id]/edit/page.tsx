@@ -267,6 +267,7 @@ export default function EditNewsPage() {
                 onChange={handleFileChange}
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
+              <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
             </div>
 
             {/* Category removed from edit form */}

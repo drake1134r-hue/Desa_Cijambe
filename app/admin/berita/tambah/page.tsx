@@ -188,15 +188,7 @@ export default function TambahBeritaPage() {
                 onChange={handleFileChange}
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-            </div>
-
-            <div className="flex gap-4 pt-6">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {loading ? "Menyimpan..." : "Simpan Berita"}
+                <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
               </button>
               <Link
                 href="/admin/berita"

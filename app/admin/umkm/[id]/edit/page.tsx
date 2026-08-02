@@ -198,7 +198,7 @@ export default function EditUmkmPage() {
                             onChange={handleFileChange}
                             className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                           />
-                          <p className="mt-2 text-xs text-slate-500">Unggah gambar baru untuk mengganti foto saat ini.</p>
+                          <p className="mt-2 text-xs text-slate-500">Unggah gambar baru untuk mengganti foto saat ini. Ukuran file maksimal 1 MB.</p>
                         </div>
                         {photoPreview ? (
                           <img
