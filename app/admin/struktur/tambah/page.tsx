@@ -14,10 +14,20 @@ export default function TambahStrukturPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
   const config = adminResourceConfigs.struktur;
+
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
   const handleFileChange = (fieldName: string, fileList: FileList | null) => {
     const file = fileList?.[0];
+    setFileErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+
     if (!file) {
       setPreviews((prev) => {
         const next = { ...prev };
@@ -26,6 +36,29 @@ export default function TambahStrukturPage() {
       });
       return;
     }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileErrors((prev) => ({
+        ...prev,
+        [fieldName]: "Format file harus JPG, JPEG, PNG, atau WEBP.",
+      }));
+      const input = document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`);
+      if (input) input.value = "";
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileErrors((prev) => ({
+        ...prev,
+        [fieldName]: "Ukuran file melebihi 1 MB. Silakan pilih file yang lebih kecil.",
+      }));
+      const input = document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`);
+      if (input) input.value = "";
+      return;
+    }
+
     const url = URL.createObjectURL(file);
     setPreviews((prev) => ({ ...prev, [fieldName]: url }));
   };
@@ -208,7 +241,15 @@ export default function TambahStrukturPage() {
                                 onChange={(e) => handleFileChange(field.name, e.target.files)}
                               />
                             </label>
-                            <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
+                            {fileErrors[field.name] && (
+                              <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 p-3">
+                                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                                <p className="text-xs text-red-700">{fileErrors[field.name]}</p>
+                              </div>
+                            )}
+                            {!fileErrors[field.name] && (
+                              <p className="mt-2 text-xs text-slate-500">Format: JPG, JPEG, PNG, WEBP | Maksimal 1 MB</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -237,7 +278,7 @@ export default function TambahStrukturPage() {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || Object.keys(fileErrors).length > 0}
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (

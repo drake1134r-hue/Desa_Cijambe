@@ -14,7 +14,11 @@ export default function TambahUmkmPage() {
   const status = sessionData?.status ?? "loading";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fileError, setFileError] = useState("");
   const config = adminResourceConfigs.umkm;
+
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -34,9 +38,26 @@ export default function TambahUmkmPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFileError("");
 
     try {
       const form = new FormData(e.currentTarget);
+      const photoFile = form.get("photo") as File | null;
+
+      // Validate file if provided
+      if (photoFile && photoFile.size > 0) {
+        if (!ALLOWED_TYPES.includes(photoFile.type)) {
+          setFileError("Format file harus JPG, JPEG, PNG, atau WEBP.");
+          setLoading(false);
+          return;
+        }
+        if (photoFile.size > MAX_FILE_SIZE) {
+          setFileError("Ukuran file melebihi 1 MB. Silakan pilih file yang lebih kecil.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const res = await fetch(config.apiPath, {
         method: "POST",
         body: form,
@@ -57,6 +78,29 @@ export default function TambahUmkmPage() {
       await showError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFileError("");
+
+    if (!file || file.size === 0) {
+      return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError("Format file harus JPG, JPEG, PNG, atau WEBP.");
+      e.target.value = "";
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError("Ukuran file melebihi 1 MB. Silakan pilih file yang lebih kecil.");
+      e.target.value = "";
+      return;
     }
   };
 
@@ -138,9 +182,28 @@ export default function TambahUmkmPage() {
                           name={field.name}
                           accept="image/*"
                           required={field.required}
+                          onChange={handleFileChange}
                           className={`${inputClass} cursor-pointer border-dashed bg-slate-50`}
                         />
-                        <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
+                        {fileError && (
+                          <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 p-3">
+                            <svg
+                              className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <p className="text-xs text-red-700">{fileError}</p>
+                          </div>
+                        )}
+                        {!fileError && (
+                          <p className="mt-2 text-xs text-slate-500">Format: JPG, JPEG, PNG, WEBP | Maksimal 1 MB</p>
+                        )}
                       </div>
                     ) : (
                       <input
@@ -167,7 +230,7 @@ export default function TambahUmkmPage() {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!fileError}
                 className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Menyimpan..." : "Simpan UMKM"}

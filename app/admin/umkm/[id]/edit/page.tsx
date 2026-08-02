@@ -28,7 +28,11 @@ export default function EditUmkmPage() {
     photo_url: "",
   });
   const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [fileError, setFileError] = useState("");
   const config = adminResourceConfigs.umkm;
+
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -84,7 +88,26 @@ export default function EditUmkmPage() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
-    if (!file) return;
+    setFileError("");
+
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError("Format file harus JPG, JPEG, PNG, atau WEBP.");
+      event.currentTarget.value = "";
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError("Ukuran file melebihi 1 MB. Silakan pilih file yang lebih kecil.");
+      event.currentTarget.value = "";
+      return;
+    }
+
     setPhotoPreview(URL.createObjectURL(file));
   };
 
@@ -94,6 +117,12 @@ export default function EditUmkmPage() {
 
     setSubmitting(true);
     setError("");
+
+    if (fileError) {
+      setError(fileError);
+      setSubmitting(false);
+      return;
+    }
 
     const form = new FormData(e.currentTarget);
 
@@ -198,7 +227,25 @@ export default function EditUmkmPage() {
                             onChange={handleFileChange}
                             className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                           />
-                          <p className="mt-2 text-xs text-slate-500">Unggah gambar baru untuk mengganti foto saat ini. Ukuran file maksimal 1 MB.</p>
+                          {fileError && (
+                            <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 p-3">
+                              <svg
+                                className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <p className="text-xs text-red-700">{fileError}</p>
+                            </div>
+                          )}
+                          {!fileError && (
+                            <p className="mt-2 text-xs text-slate-500">Unggah gambar baru untuk mengganti foto saat ini. Format: JPG, JPEG, PNG, WEBP | Maksimal 1 MB</p>
+                          )}
                         </div>
                         {photoPreview ? (
                           <img
@@ -279,7 +326,7 @@ export default function EditUmkmPage() {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !!fileError}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (

@@ -45,6 +45,10 @@ export default function EditNewsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fileError, setFileError] = useState("");
+
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
   // Fetch article data
   useEffect(() => {
@@ -108,6 +112,29 @@ export default function EditNewsPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
+    setFileError("");
+
+    if (!file) {
+      setFormData((prev) => ({ ...prev, coverImageFile: null }));
+      return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError("Format file harus JPG, JPEG, PNG, atau WEBP.");
+      e.target.value = "";
+      setFormData((prev) => ({ ...prev, coverImageFile: null }));
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError("Ukuran file melebihi 1 MB. Silakan pilih file yang lebih kecil.");
+      e.target.value = "";
+      setFormData((prev) => ({ ...prev, coverImageFile: null }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, coverImageFile: file }));
   };
 
@@ -115,6 +142,12 @@ export default function EditNewsPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
+    if (fileError) {
+      setError(fileError);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const payload = new FormData();
@@ -267,7 +300,25 @@ export default function EditNewsPage() {
                 onChange={handleFileChange}
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <p className="mt-2 text-xs text-slate-500">Ukuran file maksimal 1 MB.</p>
+              {fileError && (
+                <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 p-3">
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="text-xs text-red-700">{fileError}</p>
+                </div>
+              )}
+              {!fileError && (
+                <p className="mt-2 text-xs text-slate-500">Format: JPG, JPEG, PNG, WEBP | Maksimal 1 MB</p>
+              )}
             </div>
 
             {/* Category removed from edit form */}
@@ -302,7 +353,7 @@ export default function EditNewsPage() {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !!fileError}
                 className="flex-1 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {submitting ? "Menyimpan..." : "Simpan Perubahan"}
