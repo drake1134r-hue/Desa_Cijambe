@@ -94,9 +94,24 @@ export async function parseFileField(value: unknown, folder: string) {
   if (!hasFileLikeShape) return null;
 
   try {
+    // Log file info for debugging
+    if (process.env.NODE_ENV === "development") {
+      console.log("parseFileField - Processing file:", {
+        name: maybeFile.name,
+        type: maybeFile.type || "unknown",
+        size: maybeFile.size,
+        folder,
+      });
+    }
+
     return await saveUploadedFile(maybeFile, folder);
   } catch (err) {
-    console.error("parseFileField error:", err);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("parseFileField error:", {
+      fileName: maybeFile.name,
+      folder,
+      error: errorMsg,
+    });
     throw err;
   }
 }

@@ -10,10 +10,21 @@ const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
 
 // More flexible MIME type matching
 function isAllowedImageType(mimeType: string | undefined, fileName: string): boolean {
-  if (!mimeType && !fileName) return false;
+  if (!fileName) return false;
+
+  // Fallback: check file extension FIRST (most reliable)
+  const fileExtension = path.extname(fileName).toLowerCase();
+  if (ALLOWED_EXTENSIONS.includes(fileExtension)) {
+    return true;
+  }
+
+  // If no MIME type provided, we already checked extension - accept it if extension valid
+  if (!mimeType) {
+    return false;
+  }
 
   // Direct match for known types
-  if (mimeType && ALLOWED_TYPES.includes(mimeType)) {
+  if (ALLOWED_TYPES.includes(mimeType)) {
     return true;
   }
 
@@ -29,17 +40,7 @@ function isAllowedImageType(mimeType: string | undefined, fileName: string): boo
     "image/x-webp",
   ];
 
-  if (mimeType && extendedTypes.includes(mimeType)) {
-    return true;
-  }
-
-  // Fallback: check file extension
-  const fileExtension = path.extname(fileName).toLowerCase();
-  if (ALLOWED_EXTENSIONS.includes(fileExtension)) {
-    return true;
-  }
-
-  return false;
+  return extendedTypes.includes(mimeType);
 }
 
 async function streamToBuffer(stream: any) {
@@ -115,14 +116,49 @@ async function uploadToSupabase(file: any, folder: string, safeName: string, buf
 
 export async function saveUploadedFile(file: any, folder: string) {
   // Basic checks for file-like object
-  const fileType = file?.type;
-  const fileNameRaw = file?.name || "upload";
+  let fileType = file?.type;
+  let fileNameRaw = file?.name || "upload";
   const fileSize = typeof file?.size === "number" ? file.size : undefined;
 
+  // Sanitize and normalize file name
+  let fileName = String(fileNameRaw)
+    .split(/[\\/]/)
+    .pop() // Get filename from path if present
+    ?.replace(/[^a-zA-Z0-9.-]/g, "_") || "upload";
+
+  // If no extension found and we have a type, try to infer extension from MIME type
+  if (!path.extname(fileName) && fileType) {
+    const mimeToExt: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/jpg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+      "image/x-jpeg": ".jpg",
+      "image/x-jpg": ".jpg",
+      "image/x-png": ".png",
+      "image/x-webp": ".webp",
+    };
+    const ext = mimeToExt[fileType];
+    if (ext) {
+      fileName = `${fileName}${ext}`;
+    }
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("saveUploadedFile - Validating:", {
+      originalName: fileNameRaw,
+      sanitizedName: fileName,
+      type: fileType || "unknown",
+      size: fileSize,
+    });
+  }
+
   // Flexible MIME type validation with fallback to extension checking
-  const fileName = String(fileNameRaw).replace(/[^a-zA-Z0-9.-]/g, "_");
   if (!isAllowedImageType(fileType, fileName)) {
-    throw new Error("Tipe file tidak didukung. Gunakan JPG, JPEG, PNG, atau WEBP.");
+    const fileExt = path.extname(fileName).toLowerCase();
+    throw new Error(
+      `Tipe file tidak didukung: ${fileExt || "tidak diketahui"}. Format yang diizinkan: JPG, JPEG, PNG, atau WEBP.`
+    );
   }
 
   if (fileSize !== undefined && fileSize > MAX_FILE_SIZE) {
