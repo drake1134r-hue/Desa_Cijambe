@@ -18,7 +18,36 @@ export default function TambahStrukturPage() {
   const config = adminResourceConfigs.struktur;
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
   const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+
+  const isValidImageFile = (file: File): boolean => {
+    // Check MIME type first
+    if (ALLOWED_TYPES.includes(file.type)) {
+      return true;
+    }
+
+    // Extended MIME type variations
+    const extendedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/x-jpeg",
+      "image/x-jpg",
+      "image/png",
+      "image/x-png",
+      "image/webp",
+      "image/x-webp",
+    ];
+
+    if (extendedTypes.includes(file.type)) {
+      return true;
+    }
+
+    // Fallback: check file extension
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop() || "";
+    return ALLOWED_EXTENSIONS.includes(fileExtension);
+  };
 
   const handleFileChange = (fieldName: string, fileList: FileList | null) => {
     const file = fileList?.[0];
@@ -37,8 +66,8 @@ export default function TambahStrukturPage() {
       return;
     }
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Validate file type with flexible checking
+    if (!isValidImageFile(file)) {
       setFileErrors((prev) => ({
         ...prev,
         [fieldName]: "Format file harus JPG, JPEG, PNG, atau WEBP.",

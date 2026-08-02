@@ -4,8 +4,43 @@ import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
 const MAX_FILE_SIZE = 1 * 1024 * 1024;
 const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
+
+// More flexible MIME type matching
+function isAllowedImageType(mimeType: string | undefined, fileName: string): boolean {
+  if (!mimeType && !fileName) return false;
+
+  // Direct match for known types
+  if (mimeType && ALLOWED_TYPES.includes(mimeType)) {
+    return true;
+  }
+
+  // Extended MIME type variations
+  const extendedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/x-jpeg",
+    "image/x-jpg",
+    "image/png",
+    "image/x-png",
+    "image/webp",
+    "image/x-webp",
+  ];
+
+  if (mimeType && extendedTypes.includes(mimeType)) {
+    return true;
+  }
+
+  // Fallback: check file extension
+  const fileExtension = path.extname(fileName).toLowerCase();
+  if (ALLOWED_EXTENSIONS.includes(fileExtension)) {
+    return true;
+  }
+
+  return false;
+}
 
 async function streamToBuffer(stream: any) {
   const chunks: Uint8Array[] = [];
@@ -84,7 +119,9 @@ export async function saveUploadedFile(file: any, folder: string) {
   const fileNameRaw = file?.name || "upload";
   const fileSize = typeof file?.size === "number" ? file.size : undefined;
 
-  if (fileType && !ALLOWED_TYPES.includes(fileType)) {
+  // Flexible MIME type validation with fallback to extension checking
+  const fileName = String(fileNameRaw).replace(/[^a-zA-Z0-9.-]/g, "_");
+  if (!isAllowedImageType(fileType, fileName)) {
     throw new Error("Tipe file tidak didukung. Gunakan JPG, JPEG, PNG, atau WEBP.");
   }
 
@@ -92,7 +129,6 @@ export async function saveUploadedFile(file: any, folder: string) {
     throw new Error("Ukuran file melebihi 1 MB.");
   }
 
-  const fileName = String(fileNameRaw).replace(/[^a-zA-Z0-9.-]/g, "_");
   const extension = path.extname(fileName) || ".jpg";
   const safeName = `${Date.now()}-${randomUUID()}${extension}`;
 
