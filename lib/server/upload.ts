@@ -53,6 +53,19 @@ async function streamToBuffer(stream: any) {
   // Web ReadableStream
   if (typeof stream.getReader === "function") {
     console.log("streamToBuffer - Using web ReadableStream");
+    if (typeof Response === "function") {
+      try {
+        const ab = await new Response(stream).arrayBuffer();
+        if (ab && ab.byteLength > 0) {
+          const buffer = Buffer.from(ab);
+          console.log(`streamToBuffer - Web stream success via Response, size: ${buffer.length}`);
+          return buffer;
+        }
+      } catch (responseErr) {
+        console.warn("streamToBuffer - Response fallback failed for web stream:", responseErr instanceof Error ? responseErr.message : String(responseErr));
+      }
+    }
+
     const chunks: Uint8Array[] = [];
     try {
       let chunkCount = 0;
@@ -109,6 +122,19 @@ async function streamToBuffer(stream: any) {
   // Node.js stream fallback
   if (typeof stream.on === "function") {
     console.log("streamToBuffer - Using Node.js stream");
+    if (typeof Response === "function") {
+      try {
+        const ab = await new Response(stream as any).arrayBuffer();
+        if (ab && ab.byteLength > 0) {
+          const buffer = Buffer.from(ab);
+          console.log(`streamToBuffer - Node stream success via Response, size: ${buffer.length}`);
+          return buffer;
+        }
+      } catch (responseErr) {
+        console.warn("streamToBuffer - Response fallback failed for Node stream:", responseErr instanceof Error ? responseErr.message : String(responseErr));
+      }
+    }
+
     return new Promise<Buffer>((resolve, reject) => {
       let hasData = false;
       let chunkCount = 0;
@@ -160,6 +186,22 @@ async function readFileBuffer(file: any) {
 
   const errors: string[] = [];
 
+  if (typeof file.stream === "function") {
+    try {
+      console.log("readFileBuffer - Trying stream...");
+      const stream = file.stream();
+      const buffer = await streamToBuffer(stream);
+      if (buffer && buffer.length > 0) {
+        return buffer;
+      }
+      errors.push("stream kosong");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`stream error: ${errMsg}`);
+      console.error("readFileBuffer - stream error:", errMsg);
+    }
+  }
+
   if (typeof file.arrayBuffer === "function") {
     try {
       console.log("readFileBuffer - Trying arrayBuffer...");
@@ -174,22 +216,6 @@ async function readFileBuffer(file: any) {
       const errMsg = err instanceof Error ? err.message : String(err);
       errors.push(`arrayBuffer error: ${errMsg}`);
       console.error("readFileBuffer - arrayBuffer error:", errMsg);
-    }
-  }
-
-  if (typeof file.stream === "function") {
-    try {
-      console.log("readFileBuffer - Trying stream...");
-      const stream = file.stream();
-      const buffer = await streamToBuffer(stream);
-      if (buffer && buffer.length > 0) {
-        return buffer;
-      }
-      errors.push("stream kosong");
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      errors.push(`stream error: ${errMsg}`);
-      console.error("readFileBuffer - stream error:", errMsg);
     }
   }
 
@@ -210,7 +236,7 @@ async function readFileBuffer(file: any) {
     }
   }
 
-  if (file._readableState) {
+  if (file?._readableState) {
     try {
       console.log("readFileBuffer - Trying Node stream fallback...");
       const buffer = await streamToBuffer(file);
@@ -222,6 +248,33 @@ async function readFileBuffer(file: any) {
       const errMsg = err instanceof Error ? err.message : String(err);
       errors.push(`Node stream error: ${errMsg}`);
       console.error("readFileBuffer - Node stream error:", errMsg);
+    }
+  }
+
+  if (ArrayBuffer.isView(file)) {
+    const buffer = Buffer.from(file.buffer, file.byteOffset, file.byteLength);
+    if (buffer.length > 0) {
+      console.log("readFileBuffer - Using ArrayBuffer view, size:", buffer.length);
+      return buffer;
+    }
+    errors.push("ArrayBuffer view kosong");
+  }
+
+  if (typeof Blob === "function") {
+    try {
+      console.log("readFileBuffer - Trying Blob fallback...");
+      const blob = new Blob([file]);
+      const ab = await blob.arrayBuffer();
+      if (ab && ab.byteLength > 0) {
+        const buffer = Buffer.from(ab);
+        console.log("readFileBuffer - Blob fallback success, size:", buffer.length);
+        return buffer;
+      }
+      errors.push("Blob fallback kosong");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`Blob fallback error: ${errMsg}`);
+      console.error("readFileBuffer - Blob fallback error:", errMsg);
     }
   }
 
