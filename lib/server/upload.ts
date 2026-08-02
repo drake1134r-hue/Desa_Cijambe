@@ -336,6 +336,9 @@ export async function saveUploadedFile(file: any, folder: string) {
     throw new Error("File object tidak valid");
   }
 
+  console.log("saveUploadedFile - constructor:", file?.constructor?.name);
+  console.log("saveUploadedFile - file object:", file);
+
   const fileType = file?.type || "";
   let fileNameRaw = file?.name || "";
 
