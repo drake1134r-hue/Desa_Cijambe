@@ -115,14 +115,13 @@ async function uploadToSupabase(file: any, folder: string, safeName: string, buf
 }
 
 export async function saveUploadedFile(file: any, folder: string) {
-  // Validate file-like object
+  // Validate file-like object exists
   if (!file || typeof file !== "object") {
     throw new Error("File object tidak valid");
   }
 
   const fileType = file?.type || "";
   let fileNameRaw = file?.name || "";
-  const fileSize = typeof file?.size === "number" ? file.size : undefined;
 
   // Log incoming file info for debugging
   if (process.env.NODE_ENV === "development") {
@@ -130,17 +129,8 @@ export async function saveUploadedFile(file: any, folder: string) {
       hasName: !!fileNameRaw,
       fileName: fileNameRaw,
       fileType,
-      fileSize,
+      fileSize: file?.size,
     });
-  }
-
-  // Check file size first
-  if (fileSize === undefined || fileSize === 0) {
-    throw new Error("File kosong atau ukuran tidak terdeteksi");
-  }
-
-  if (fileSize > MAX_FILE_SIZE) {
-    throw new Error("Ukuran file melebihi 1 MB.");
   }
 
   // Extract and sanitize file name from path
@@ -180,34 +170,9 @@ export async function saveUploadedFile(file: any, folder: string) {
     fileName = "upload" + extension;
   }
 
-  // Validate file type with more lenient approach
-  if (fileSize > 0) {
-    // Accept if file has content, regardless of MIME/extension detection
-    // But still log warning if type doesn't look like an image
-    if (!fileType || !fileType.startsWith("image/")) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("File uploaded without proper MIME type:", {
-          type: fileType,
-          name: fileName,
-        });
-      }
-    }
-  } else {
-    throw new Error("File kosong");
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("DEBUG processed file:", {
-      sanitizedName: fileName,
-      extension,
-      type: fileType || "unknown",
-      size: fileSize,
-    });
-  }
-
   const safeName = `${Date.now()}-${randomUUID()}${extension}`;
 
-  // try arrayBuffer -> stream -> buffer
+  // Read file to buffer FIRST, then check size
   let buffer: Buffer;
   try {
     if (typeof file.arrayBuffer === "function") {
@@ -225,6 +190,24 @@ export async function saveUploadedFile(file: any, folder: string) {
     }
   } catch (err) {
     throw new Error(`Gagal memproses file upload: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // NOW check buffer size (after successfully reading)
+  if (!buffer || buffer.length === 0) {
+    throw new Error("File kosong atau tidak dapat dibaca.");
+  }
+
+  if (buffer.length > MAX_FILE_SIZE) {
+    throw new Error("Ukuran file melebihi 1 MB.");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("DEBUG processed file:", {
+      sanitizedName: fileName,
+      extension,
+      type: fileType || "unknown",
+      bufferSize: buffer.length,
+    });
   }
 
   try {
