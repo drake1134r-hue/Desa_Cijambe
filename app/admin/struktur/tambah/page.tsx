@@ -22,31 +22,20 @@ export default function TambahStrukturPage() {
   const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
   const isValidImageFile = (file: File): boolean => {
-    // Check MIME type first
-    if (ALLOWED_TYPES.includes(file.type)) {
+    // Check if file has size
+    if (file.size === 0) {
+      return false;
+    }
+
+    // Check MIME type first (most reliable)
+    if (file.type && file.type.startsWith("image/")) {
       return true;
     }
 
-    // Extended MIME type variations
-    const extendedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/x-jpeg",
-      "image/x-jpg",
-      "image/png",
-      "image/x-png",
-      "image/webp",
-      "image/x-webp",
-    ];
-
-    if (extendedTypes.includes(file.type)) {
-      return true;
-    }
-
-    // Fallback: check file extension
+    // Check file extension as fallback
     const fileName = file.name.toLowerCase();
-    const fileExtension = fileName.split(".").pop() || "";
-    return ALLOWED_EXTENSIONS.includes(fileExtension);
+    const allowedExts = [".jpg", ".jpeg", ".png", ".webp"];
+    return allowedExts.some((ext) => fileName.endsWith(ext));
   };
 
   const handleFileChange = (fieldName: string, fileList: FileList | null) => {

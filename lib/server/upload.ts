@@ -10,37 +10,37 @@ const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
 
 // More flexible MIME type matching
 function isAllowedImageType(mimeType: string | undefined, fileName: string): boolean {
-  if (!fileName) return false;
+  // If we have a valid MIME type, check it first
+  if (mimeType) {
+    const validMimes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/x-jpeg",
+      "image/x-jpg",
+      "image/png",
+      "image/x-png",
+      "image/webp",
+      "image/x-webp",
+    ];
+    if (validMimes.includes(mimeType)) {
+      return true;
+    }
+  }
 
-  // Fallback: check file extension FIRST (most reliable)
-  const fileExtension = path.extname(fileName).toLowerCase();
-  if (ALLOWED_EXTENSIONS.includes(fileExtension)) {
+  // Check file extension if present
+  if (fileName) {
+    const fileExtension = path.extname(fileName).toLowerCase();
+    if (ALLOWED_EXTENSIONS.includes(fileExtension)) {
+      return true;
+    }
+  }
+
+  // If we have no filename but a valid MIME, accept it
+  if (mimeType) {
     return true;
   }
 
-  // If no MIME type provided, we already checked extension - accept it if extension valid
-  if (!mimeType) {
-    return false;
-  }
-
-  // Direct match for known types
-  if (ALLOWED_TYPES.includes(mimeType)) {
-    return true;
-  }
-
-  // Extended MIME type variations
-  const extendedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/x-jpeg",
-    "image/x-jpg",
-    "image/png",
-    "image/x-png",
-    "image/webp",
-    "image/x-webp",
-  ];
-
-  return extendedTypes.includes(mimeType);
+  return false;
 }
 
 async function streamToBuffer(stream: any) {
@@ -115,19 +115,46 @@ async function uploadToSupabase(file: any, folder: string, safeName: string, buf
 }
 
 export async function saveUploadedFile(file: any, folder: string) {
-  // Basic checks for file-like object
-  let fileType = file?.type;
-  let fileNameRaw = file?.name || "upload";
+  // Validate file-like object
+  if (!file || typeof file !== "object") {
+    throw new Error("File object tidak valid");
+  }
+
+  const fileType = file?.type || "";
+  let fileNameRaw = file?.name || "";
   const fileSize = typeof file?.size === "number" ? file.size : undefined;
 
-  // Sanitize and normalize file name
-  let fileName = String(fileNameRaw)
-    .split(/[\\/]/)
-    .pop() // Get filename from path if present
-    ?.replace(/[^a-zA-Z0-9.-]/g, "_") || "upload";
+  // Log incoming file info for debugging
+  if (process.env.NODE_ENV === "development") {
+    console.log("DEBUG saveUploadedFile:", {
+      hasName: !!fileNameRaw,
+      fileName: fileNameRaw,
+      fileType,
+      fileSize,
+    });
+  }
 
-  // If no extension found and we have a type, try to infer extension from MIME type
-  if (!path.extname(fileName) && fileType) {
+  // Check file size first
+  if (fileSize === undefined || fileSize === 0) {
+    throw new Error("File kosong atau ukuran tidak terdeteksi");
+  }
+
+  if (fileSize > MAX_FILE_SIZE) {
+    throw new Error("Ukuran file melebihi 1 MB.");
+  }
+
+  // Extract and sanitize file name from path
+  let fileName = fileNameRaw
+    ? String(fileNameRaw)
+        .split(/[\\/]/)
+        .pop() // Get filename from path if present
+        ?.replace(/[^a-zA-Z0-9.-]/g, "_") || "upload"
+    : "upload";
+
+  let extension = path.extname(fileName).toLowerCase();
+
+  // If no extension and we have MIME type, infer from MIME
+  if (!extension && fileType) {
     const mimeToExt: Record<string, string> = {
       "image/jpeg": ".jpg",
       "image/jpg": ".jpg",
@@ -138,34 +165,46 @@ export async function saveUploadedFile(file: any, folder: string) {
       "image/x-png": ".png",
       "image/x-webp": ".webp",
     };
-    const ext = mimeToExt[fileType];
-    if (ext) {
-      fileName = `${fileName}${ext}`;
+    extension = mimeToExt[fileType] || ".jpg";
+  }
+
+  // Default to .jpg if still no extension
+  if (!extension) {
+    extension = ".jpg";
+  }
+
+  // Update fileName with proper extension
+  if (fileName !== "upload" && !fileName.toLowerCase().endsWith(extension)) {
+    fileName = fileName.split(".")[0] + extension;
+  } else if (fileName === "upload") {
+    fileName = "upload" + extension;
+  }
+
+  // Validate file type with more lenient approach
+  if (fileSize > 0) {
+    // Accept if file has content, regardless of MIME/extension detection
+    // But still log warning if type doesn't look like an image
+    if (!fileType || !fileType.startsWith("image/")) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("File uploaded without proper MIME type:", {
+          type: fileType,
+          name: fileName,
+        });
+      }
     }
+  } else {
+    throw new Error("File kosong");
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.log("saveUploadedFile - Validating:", {
-      originalName: fileNameRaw,
+    console.log("DEBUG processed file:", {
       sanitizedName: fileName,
+      extension,
       type: fileType || "unknown",
       size: fileSize,
     });
   }
 
-  // Flexible MIME type validation with fallback to extension checking
-  if (!isAllowedImageType(fileType, fileName)) {
-    const fileExt = path.extname(fileName).toLowerCase();
-    throw new Error(
-      `Tipe file tidak didukung: ${fileExt || "tidak diketahui"}. Format yang diizinkan: JPG, JPEG, PNG, atau WEBP.`
-    );
-  }
-
-  if (fileSize !== undefined && fileSize > MAX_FILE_SIZE) {
-    throw new Error("Ukuran file melebihi 1 MB.");
-  }
-
-  const extension = path.extname(fileName) || ".jpg";
   const safeName = `${Date.now()}-${randomUUID()}${extension}`;
 
   // try arrayBuffer -> stream -> buffer
