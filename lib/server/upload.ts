@@ -49,14 +49,14 @@ async function streamToBuffer(stream: any) {
   }
 
   console.log("streamToBuffer - START, checking stream type...");
-  const chunks: Uint8Array[] = [];
-  const reader = stream.getReader?.();
-  
-  if (reader) {
-    // web ReadableStream
+
+  // Web ReadableStream
+  if (typeof stream.getReader === "function") {
     console.log("streamToBuffer - Using web ReadableStream");
+    const chunks: Uint8Array[] = [];
     try {
       let chunkCount = 0;
+      const reader = stream.getReader();
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
@@ -71,51 +71,161 @@ async function streamToBuffer(stream: any) {
     } catch (err) {
       throw new Error(`Web stream read error: ${err instanceof Error ? err.message : String(err)}`);
     }
-    
+
     if (chunks.length === 0) {
       throw new Error("Stream kosong (tidak ada data)");
     }
-    
+
     const result = Buffer.concat(chunks.map((c) => Buffer.from(c)));
     console.log(`streamToBuffer - Web stream success, result size: ${result.length}`);
     return result;
   }
 
-  // Node.js stream fallback
-  console.log("streamToBuffer - Using Node.js stream");
-  return new Promise<Buffer>((resolve, reject) => {
-    let hasData = false;
+  // Async iterable stream support
+  if (typeof stream[Symbol.asyncIterator] === "function") {
+    console.log("streamToBuffer - Using async iterable stream");
+    const chunks: Uint8Array[] = [];
     let chunkCount = 0;
-    const bufs: Buffer[] = [];
-    
-    stream.on("data", (d: any) => {
-      hasData = true;
-      chunkCount++;
-      bufs.push(Buffer.from(d));
-    });
-    
-    stream.on("end", () => {
-      console.log(`streamToBuffer - Node stream end, received ${chunkCount} chunks`);
-      if (!hasData) {
-        reject(new Error("Node stream kosong (tidak ada data)"));
-      } else {
-        const result = Buffer.concat(bufs);
-        console.log(`streamToBuffer - Node stream success, result size: ${result.length}`);
-        resolve(result);
+    try {
+      for await (const chunk of stream) {
+        if (chunk) {
+          chunkCount++;
+          chunks.push(Buffer.from(chunk));
+        }
       }
+    } catch (err) {
+      throw new Error(`Async iterable stream read error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    if (chunks.length === 0) {
+      throw new Error("Stream kosong (tidak ada data)");
+    }
+
+    const result = Buffer.concat(chunks);
+    console.log(`streamToBuffer - Async iterable stream success, result size: ${result.length}`);
+    return result;
+  }
+
+  // Node.js stream fallback
+  if (typeof stream.on === "function") {
+    console.log("streamToBuffer - Using Node.js stream");
+    return new Promise<Buffer>((resolve, reject) => {
+      let hasData = false;
+      let chunkCount = 0;
+      const bufs: Buffer[] = [];
+
+      stream.on("data", (d: any) => {
+        hasData = true;
+        chunkCount++;
+        bufs.push(Buffer.from(d));
+      });
+
+      stream.on("end", () => {
+        console.log(`streamToBuffer - Node stream end, received ${chunkCount} chunks`);
+        if (!hasData) {
+          reject(new Error("Node stream kosong (tidak ada data)"));
+        } else {
+          const result = Buffer.concat(bufs);
+          console.log(`streamToBuffer - Node stream success, result size: ${result.length}`);
+          resolve(result);
+        }
+      });
+
+      stream.on("error", (err: any) => {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`streamToBuffer - Node stream error: ${errMsg}`);
+        reject(new Error(`Node stream error: ${errMsg}`));
+      });
+
+      setTimeout(() => {
+        reject(new Error("Stream read timeout"));
+      }, 30000);
     });
-    
-    stream.on("error", (err: any) => {
+  }
+
+  throw new Error("Jenis stream tidak dikenali");
+}
+
+async function readFileBuffer(file: any) {
+  if (!file || typeof file !== "object") {
+    throw new Error("File tidak valid untuk dibaca");
+  }
+
+  if (file instanceof Buffer) {
+    if (file.length === 0) {
+      throw new Error("Buffer kosong");
+    }
+    return file;
+  }
+
+  const errors: string[] = [];
+
+  if (typeof file.arrayBuffer === "function") {
+    try {
+      console.log("readFileBuffer - Trying arrayBuffer...");
+      const ab = await file.arrayBuffer();
+      if (ab && ab.byteLength > 0) {
+        const buffer = Buffer.from(ab);
+        console.log("readFileBuffer - arrayBuffer success, size:", buffer.length);
+        return buffer;
+      }
+      errors.push("arrayBuffer kosong");
+    } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.error(`streamToBuffer - Node stream error: ${errMsg}`);
-      reject(new Error(`Node stream error: ${errMsg}`));
-    });
-    
-    // Timeout after 30 seconds
-    setTimeout(() => {
-      reject(new Error("Stream read timeout"));
-    }, 30000);
-  });
+      errors.push(`arrayBuffer error: ${errMsg}`);
+      console.error("readFileBuffer - arrayBuffer error:", errMsg);
+    }
+  }
+
+  if (typeof file.stream === "function") {
+    try {
+      console.log("readFileBuffer - Trying stream...");
+      const stream = file.stream();
+      const buffer = await streamToBuffer(stream);
+      if (buffer && buffer.length > 0) {
+        return buffer;
+      }
+      errors.push("stream kosong");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`stream error: ${errMsg}`);
+      console.error("readFileBuffer - stream error:", errMsg);
+    }
+  }
+
+  if (typeof Response === "function") {
+    try {
+      console.log("readFileBuffer - Trying Response fallback...");
+      const ab = await new Response(file).arrayBuffer();
+      if (ab && ab.byteLength > 0) {
+        const buffer = Buffer.from(ab);
+        console.log("readFileBuffer - Response fallback success, size:", buffer.length);
+        return buffer;
+      }
+      errors.push("Response fallback kosong");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`Response fallback error: ${errMsg}`);
+      console.error("readFileBuffer - Response fallback error:", errMsg);
+    }
+  }
+
+  if (file._readableState) {
+    try {
+      console.log("readFileBuffer - Trying Node stream fallback...");
+      const buffer = await streamToBuffer(file);
+      if (buffer && buffer.length > 0) {
+        return buffer;
+      }
+      errors.push("Node stream kosong");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`Node stream error: ${errMsg}`);
+      console.error("readFileBuffer - Node stream error:", errMsg);
+    }
+  }
+
+  throw new Error(errors.length > 0 ? errors.join(" | ") : "Format tidak didukung");
 }
 
 function getSupabaseStorageConfig() {
@@ -227,89 +337,12 @@ export async function saveUploadedFile(file: any, folder: string) {
 
   const safeName = `${Date.now()}-${randomUUID()}${extension}`;
 
-  // Read file to buffer FIRST, then check size
-  let buffer: Buffer | null = null;
-  let readError: Error | null = null;
-
-  // Try multiple methods to read file
-  if (typeof file.arrayBuffer === "function") {
-    try {
-      console.log("Attempting arrayBuffer read...");
-      const ab = await file.arrayBuffer();
-      console.log("arrayBuffer result:", { byteLength: ab?.byteLength, type: typeof ab });
-      if (ab && ab.byteLength > 0) {
-        buffer = Buffer.from(ab);
-        console.log("Successfully read via arrayBuffer, buffer size:", buffer.length);
-      }
-    } catch (err) {
-      readError = err instanceof Error ? err : new Error(String(err));
-      console.error("arrayBuffer error:", readError.message);
-    }
-  }
-
-  // Fallback: try stream
-  if (!buffer && typeof file.stream === "function") {
-    try {
-      console.log("Attempting stream read...");
-      const s = file.stream();
-      const streamBuffer = await streamToBuffer(s);
-      console.log("Stream result:", { bufferLength: streamBuffer?.length });
-      if (streamBuffer && streamBuffer.length > 0) {
-        buffer = streamBuffer;
-        readError = null;
-        console.log("Successfully read via stream, buffer size:", buffer.length);
-      } else {
-        readError = new Error("Stream mengembalikan buffer kosong");
-      }
-    } catch (err) {
-      if (!readError) {
-        readError = err instanceof Error ? err : new Error(String(err));
-      }
-      console.error("Stream error:", readError.message);
-    }
-  }
-
-  // Fallback: handle if already a Buffer
-  if (!buffer && file instanceof Buffer) {
-    try {
-      console.log("File is already a Buffer, size:", file.length);
-      if (file.length > 0) {
-        buffer = file;
-        readError = null;
-        console.log("Using Buffer directly, size:", buffer.length);
-      } else {
-        readError = new Error("Buffer kosong");
-      }
-    } catch (err) {
-      readError = err instanceof Error ? err : new Error(String(err));
-      console.error("Buffer check error:", readError.message);
-    }
-  }
-
-  // Fallback: try Node stream if present
-  if (!buffer && file._readableState) {
-    try {
-      console.log("Attempting Node stream read...");
-      const nodeBuffer = await streamToBuffer(file);
-      console.log("Node stream result:", { bufferLength: nodeBuffer?.length });
-      if (nodeBuffer && nodeBuffer.length > 0) {
-        buffer = nodeBuffer;
-        readError = null;
-        console.log("Successfully read via Node stream, buffer size:", buffer.length);
-      } else {
-        readError = new Error("Node stream mengembalikan buffer kosong");
-      }
-    } catch (err) {
-      if (!readError) {
-        readError = err instanceof Error ? err : new Error(String(err));
-      }
-      console.error("Node stream error:", readError.message);
-    }
-  }
-
-  // If still no buffer, throw detailed error
-  if (!buffer) {
-    const detailMsg = readError?.message || "Format tidak didukung";
+  // Read file to buffer using a robust helper
+  let buffer: Buffer;
+  try {
+    buffer = await readFileBuffer(file);
+  } catch (err) {
+    const detailMsg = err instanceof Error ? err.message : String(err);
     console.error("Failed to read file buffer:", {
       error: detailMsg,
       tryMethods: {
