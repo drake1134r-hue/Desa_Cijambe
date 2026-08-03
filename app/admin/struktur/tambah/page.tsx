@@ -96,7 +96,14 @@ export default function TambahStrukturPage() {
     setLoading(true);
     setError("");
 
-    const form = new FormData(e.target);
+    const formEl = e.target as HTMLFormElement;
+    const form = new FormData(formEl);
+
+    // Ensure the file input is explicitly added to FormData
+    const fileInput = formEl.querySelector<HTMLInputElement>('input[name="photo"]');
+    if (fileInput?.files && fileInput.files[0]) {
+      form.set('photo', fileInput.files[0]);
+    }
 
     try {
       const res = await fetch(config.apiPath, {

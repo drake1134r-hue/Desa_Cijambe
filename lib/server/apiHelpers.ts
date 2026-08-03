@@ -1,4 +1,5 @@
 import { getToken } from "next-auth/jwt";
+import { Readable } from "stream";
 import { ensureAdmin } from "@/lib/server/admin";
 import { saveUploadedFile } from "@/lib/server/upload";
 import { sanitizeText } from "@/lib/server/validation";
@@ -34,15 +35,110 @@ export async function requireAuthSession(req: Request) {
   };
 }
 
+function parseBoundary(contentType: string) {
+  const match = /boundary=(?:(?:"([^"]+)")|([^;]+))/i.exec(contentType);
+  return match ? match[1] || match[2] : null;
+}
+
+function splitBuffer(buffer: Buffer, delimiter: Buffer) {
+  const parts: Buffer[] = [];
+  let start = 0;
+  while (start < buffer.length) {
+    const index = buffer.indexOf(delimiter, start);
+    if (index === -1) {
+      parts.push(buffer.subarray(start));
+      break;
+    }
+    parts.push(buffer.subarray(start, index));
+    start = index + delimiter.length;
+  }
+  return parts;
+}
+
+async function parseMultipartFormData(req: Request, contentType: string) {
+  const bodyBuffer = Buffer.from(await req.arrayBuffer());
+  const boundaryValue = parseBoundary(contentType);
+  console.log("parseMultipartFormData - contentType:", contentType);
+  console.log("parseMultipartFormData - detected boundary:", boundaryValue);
+  console.log("parseMultipartFormData - bodyBuffer length:", bodyBuffer.length);
+
+  if (!boundaryValue) {
+    throw new Error("Boundary multipart/form-data tidak ditemukan");
+  }
+
+  const boundary = Buffer.from(`--${boundaryValue}`);
+  const parts = splitBuffer(bodyBuffer, boundary).slice(1);
+  console.log("parseMultipartFormData - parts count:", parts.length);
+  const result: Record<string, any> = {};
+
+  for (const part of parts) {
+    const trimmed = part.subarray(0, part.length - 2); // remove trailing CRLF
+    const section = trimmed.toString("latin1");
+    console.log("parseMultipartFormData - part length:", part.length, "trimmed length:", trimmed.length);
+    if (section === "--" || section.trim() === "") {
+      continue;
+    }
+
+    const headerEnd = trimmed.indexOf("\r\n\r\n");
+    if (headerEnd === -1) {
+      continue;
+    }
+
+    const headerText = trimmed.subarray(0, headerEnd).toString("latin1");
+    console.log("parseMultipartFormData - headerText snippet:", headerText.slice(0, 300));
+    const body = trimmed.subarray(headerEnd + 4);
+
+    const headers: Record<string, string> = {};
+    for (const line of headerText.split("\r\n")) {
+      const [name, ...rest] = line.split(":");
+      if (!name || rest.length === 0) continue;
+      headers[name.toLowerCase().trim()] = rest.join(":").trim();
+    }
+
+    const disposition = headers["content-disposition"];
+    if (!disposition) continue;
+
+    const nameMatch = /name="([^"]+)"/.exec(disposition);
+    if (!nameMatch) continue;
+    const fieldName = nameMatch[1];
+
+    const filenameMatch = /filename="([^"]*)"/.exec(disposition);
+    if (filenameMatch) {
+      const originalFilename = filenameMatch[1] || fieldName;
+      const contentTypeHeader = headers["content-type"] || "application/octet-stream";
+      const fileBuffer = Buffer.from(body);
+      // Diagnostic log: report parsed file metadata (do not log binary content)
+      console.log("parseMultipartFormData - parsed file:", {
+        field: fieldName,
+        name: originalFilename,
+        type: contentTypeHeader,
+        size: fileBuffer.length,
+      });
+
+      result[fieldName] = {
+        name: originalFilename,
+        type: contentTypeHeader,
+        size: fileBuffer.length,
+        buffer: fileBuffer,
+        arrayBuffer: async () => fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength),
+        stream: () => Readable.from(fileBuffer),
+        _readableState: {},
+      };
+    } else {
+      const value = body.toString("utf8");
+      console.log("parseMultipartFormData - parsed field:", { field: fieldName, value: String(value).slice(0, 200) });
+      result[fieldName] = value;
+    }
+  }
+
+  console.log("parseMultipartFormData - finished, keys:", Object.keys(result));
+  return result;
+}
+
 export async function parseRequestBody(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   if (contentType.startsWith("multipart/form-data")) {
-    const formData = await req.formData();
-    const body: Record<string, any> = {};
-    for (const [key, value] of formData.entries()) {
-      body[key] = value;
-    }
-    return body;
+    return await parseMultipartFormData(req, contentType);
   }
 
   const json = await req.json().catch(() => null);
