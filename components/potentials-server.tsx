@@ -100,11 +100,11 @@ function Avatar({
 
 function MemberCard({ name, subtitle, photoUrl }: { name?: string; subtitle?: string; photoUrl?: string | null }) {
   return (
-    <div className="flex h-full flex-col items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 pb-5 pt-6 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="min-w-0 flex h-full flex-col items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 pb-5 pt-6 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <Avatar name={name} photoUrl={photoUrl} size="md" />
-      <div className="min-w-0">
-        <p className="truncate text-base font-semibold text-slate-950">{name}</p>
-        <p className="mt-0.5 truncate text-sm text-slate-600">{subtitle}</p>
+      <div className="min-w-0 w-full">
+        <p className="truncate text-base font-semibold text-slate-950 break-words">{name}</p>
+        <p className="mt-0.5 truncate text-sm text-slate-600 break-words">{subtitle}</p>
       </div>
     </div>
   );
@@ -157,7 +157,7 @@ export default async function PotentialsServer() {
             {leadership.map((leader: OrganizationMember) => (
               <article
                 key={leader.id ?? leader.title}
-                className="relative flex h-full w-full max-w-sm flex-1 basis-72 flex-col items-center overflow-hidden rounded-[1.75rem] border border-emerald-100 bg-slate-50 p-8 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="relative flex h-full w-full max-w-sm min-w-0 flex-1 basis-72 flex-col items-center overflow-hidden rounded-[1.75rem] border border-emerald-100 bg-slate-50 p-8 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="inline-flex w-fit rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                   {leader.title ?? leader.name}
