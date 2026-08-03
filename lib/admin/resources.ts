@@ -214,9 +214,7 @@ export const adminResourceConfigs: Record<AdminResourceKey, AdminResourceConfig>
       { name: "year", label: "Tahun", type: "number", required: true, placeholder: "2026" },
       { name: "organizer", label: "Penyelenggara", type: "text", placeholder: "Penyelenggara" },
       { name: "description", label: "Deskripsi", type: "textarea", placeholder: "Deskripsi penghargaan" },
-      { name: "photo", label: "Foto", type: "file", placeholder: "Unggah foto" },
-      { name: "order", label: "Urutan", type: "number", required: true, placeholder: "Urutan tampil" },
-      {
+      { name: "
         name: "isActive",
         label: "Status Aktif",
         type: "select",

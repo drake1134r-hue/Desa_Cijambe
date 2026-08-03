@@ -27,28 +27,12 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
     const body = await parseRequestBody(req);
 
-    let photoUrl: string | null = null;
-    try {
-      photoUrl = await parseFileField(body.photo, "penghargaan");
-    } catch (err) {
-      console.warn("Failed to save uploaded photo for penghargaan:", err);
-    }
-
     const data: Record<string, unknown> = {
       title: sanitizeText(body.title),
       year: parseNumberField(body.year, undefined as any),
       organizer: sanitizeText(body.organizer),
       description: sanitizeContent(body.description),
     };
-
-    if (photoUrl) {
-      data.photo_url = photoUrl;
-    } else {
-      const normalizedPhotoUrl = normalizeStoredImageUrl(body.photo);
-      if (normalizedPhotoUrl) {
-        data.photo_url = normalizedPhotoUrl;
-      }
-    }
 
     const orderValue = parseNumberField(body.order, undefined as any);
     if (orderValue !== undefined) {

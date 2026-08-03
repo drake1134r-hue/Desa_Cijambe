@@ -36,21 +36,11 @@ export const POST = async (req: Request) => {
 
     const body = await parseRequestBody(req);
 
-    let photoUrl: string | null = null;
-    try {
-      photoUrl = await parseFileField(body.photo, "penghargaan");
-    } catch (err) {
-      console.warn("Failed to save uploaded photo for penghargaan:", err);
-    }
-
-    const fallbackPhotoUrl = normalizeStoredImageUrl(body.photo);
-
     const result = await insertOne(awards.collectionName, {
       title: sanitizeText(body.title),
       year: parseNumberField(body.year, new Date().getFullYear()),
       organizer: sanitizeText(body.organizer),
       description: sanitizeContent(body.description),
-      photo_url: photoUrl ?? fallbackPhotoUrl,
       order: parseNumberField(body.order, 0),
       is_active: body.isActive ? parseBooleanField(body.isActive) : true,
     });
