@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { jsPDF } from "jspdf";
 import { confirmDelete, showError, showSuccess } from "@/lib/admin/swal";
 import { adminResourceConfigs } from "@/lib/admin/resources";
 import { Pagination } from "@/components/ui/pagination";
@@ -104,6 +105,49 @@ export default function AdminCommentsPage() {
     }
   };
 
+  const handleExportPdf = async () => {
+    try {
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      pdf.setFontSize(14);
+      pdf.text("Komentar Warga Desa Cijambe", 40, 40);
+      pdf.setFontSize(10);
+      pdf.text(`Tanggal ekspor: ${new Date().toLocaleString("id-ID")}`, 40, 56);
+
+      const rows = filteredComments.length > 0 ? filteredComments : comments;
+      let y = 80;
+      const pageHeight = 820;
+      const lineHeight = 14;
+
+      rows.forEach((comment, index) => {
+        const header = `#${index + 1} ${comment.name || "-"} (${comment.email || "-"})`;
+        pdf.setFontSize(11);
+        pdf.text(header, 40, y);
+        y += lineHeight;
+
+        pdf.setFontSize(10);
+        const msgLines = pdf.splitTextToSize(String(comment.message || "-"), 500);
+        pdf.text(msgLines, 40, y);
+        y += msgLines.length * lineHeight;
+
+        const dateText = `Tanggal: ${comment.created_at ? new Date(comment.created_at).toLocaleString("id-ID") : "-"}`;
+        pdf.text(dateText, 40, y);
+        y += lineHeight * 1.5;
+
+        if (y > pageHeight) {
+          pdf.addPage();
+          y = 40;
+        }
+      });
+
+      pdf.save("komentar-warga.pdf");
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Gagal mengekspor komentar ke PDF.";
+      setError(message);
+      await showError(message);
+    }
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [query]);
@@ -148,13 +192,22 @@ export default function AdminCommentsPage() {
                 <h2 className="text-xl font-semibold text-slate-900">Komentar Warga</h2>
                 <p className="mt-1 text-sm text-slate-500">Lihat dan hapus komentar yang masuk dari halaman publik.</p>
               </div>
-              <div className="relative w-full max-w-md">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari komentar..."
-                  className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                >
+                  Export ke PDF
+                </button>
+                <div className="relative w-full max-w-md">
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Cari komentar..."
+                    className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  />
+                </div>
               </div>
             </div>
 
