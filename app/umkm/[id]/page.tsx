@@ -106,6 +106,8 @@ export default function UmkmDetailPage() {
                 src={imageUrl}
                 alt={item.name}
                 fill
+                quality={100}
+                unoptimized
                 className="object-cover"
                 priority
               />

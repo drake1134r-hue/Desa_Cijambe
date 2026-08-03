@@ -17,7 +17,7 @@ const stats = [
 const infoCards = [
   { icon: MapPin, label: "Alamat", title: "Desa Cijambe", desc: "Kecamatan Paseh, Kabupaten Sumedang" },
   { icon: Phone, label: "Kontak", title: "WhatsApp", desc: "+62 851-6810-2868" },
-  { icon: Clock, label: "Jam Pelayanan", title: "Senin – Jumat", desc: "08.00 – 16.00 WIB" },
+  { icon: Clock, label: "Jam Pelayanan", title: "Senin – Kamis", desc: "08.00 – 16.00 WIB" },
   { icon: Megaphone, label: "Slogan", title: "AMMAN BERKAT", desc: "Agamis • Maju • Mandiri • Berbasis Masyarakat" },
 ];
 

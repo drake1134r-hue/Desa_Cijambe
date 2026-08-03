@@ -110,7 +110,7 @@ export default function Footer() {
         </div>
         <div className="space-y-4">
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-200">Jam Pelayanan</p>
-          <p className="text-slate-100">Senin - Jumat</p>
+          <p className="text-slate-100">Senin - Kamis</p>
           <p className="text-slate-100">08.00 - 16.00 WIB</p>
           <p className="text-sm text-slate-200">© 2026 Desa Cijambe. All rights reserved.</p>
         </div>

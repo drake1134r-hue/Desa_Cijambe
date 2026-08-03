@@ -88,6 +88,8 @@ export default function UmkmList({ items = UMKM_SAMPLE }: { items?: UmkmItem[] }
                   src={u.image}
                   alt={u.name}
                   fill
+                  quality={100}
+                  unoptimized
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
