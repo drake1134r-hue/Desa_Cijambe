@@ -108,6 +108,27 @@ export default function TambahPenghargaanPage() {
                         rows={4}
                         className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                       />
+                    ) : field.type === "select" ? (
+                      <div className="relative mt-1.5">
+                        <select
+                          name={field.name}
+                          required={field.required}
+                          defaultValue=""
+                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                        >
+                          <option value="" disabled>
+                            {field.placeholder ?? `Pilih ${field.label}`}
+                          </option>
+                          {field.options?.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400">
+                          ▼
+                        </span>
+                      </div>
                     ) : field.type === "file" ? (
                       <div className="mt-1.5 flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50">
