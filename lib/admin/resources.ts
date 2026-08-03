@@ -164,6 +164,7 @@ export const adminResourceConfigs: Record<AdminResourceKey, AdminResourceConfig>
           { value: "Jiwa", label: "Jiwa" },
           { value: "KK", label: "KK" },
           { value: "km²", label: "km²" },
+          { value: "Ha", label: "Ha" },
         ],
       },
       {
